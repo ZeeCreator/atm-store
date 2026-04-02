@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TECH-SPEC ADMIN | Modal Protocol Templates</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&amp;family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "background": "#131313",
+              "surface-tint": "#ffb5a0",
+              "on-tertiary-fixed": "#171c20",
+              "on-primary-fixed": "#3b0900",
+              "on-primary-container": "#541100",
+              "surface": "#131313",
+              "secondary-fixed-dim": "#c2c7cf",
+              "secondary-container": "#444a50",
+              "on-surface-variant": "#e7bdb2",
+              "primary": "#ffb5a0",
+              "on-error-container": "#ffdad6",
+              "primary-container": "#ff5625",
+              "on-primary": "#601400",
+              "tertiary": "#c3c7cd",
+              "on-error": "#690005",
+              "tertiary-container": "#8d9197",
+              "on-background": "#e5e2e1",
+              "surface-bright": "#393939",
+              "surface-container-high": "#2a2a2a",
+              "on-tertiary": "#2c3136",
+              "surface-container-low": "#1c1b1b",
+              "surface-container": "#201f1f",
+              "on-secondary-fixed-variant": "#42474e",
+              "outline-variant": "#5d4038",
+              "surface-container-lowest": "#0e0e0e",
+              "on-tertiary-fixed-variant": "#43474c",
+              "surface-container-highest": "#353534",
+              "secondary-fixed": "#dee3eb",
+              "on-tertiary-container": "#252a2f",
+              "tertiary-fixed-dim": "#c3c7cd",
+              "outline": "#ad887e",
+              "primary-fixed-dim": "#ffb5a0",
+              "primary-fixed": "#ffdbd1",
+              "on-surface": "#e5e2e1",
+              "inverse-surface": "#e5e2e1",
+              "error": "#ffb4ab",
+              "surface-dim": "#131313",
+              "error-container": "#93000a",
+              "inverse-primary": "#b12d00",
+              "surface-variant": "#353534",
+              "secondary": "#c2c7cf",
+              "on-secondary": "#2c3137",
+              "inverse-on-surface": "#313030",
+              "on-primary-fixed-variant": "#872000",
+              "on-secondary-fixed": "#171c22",
+              "tertiary-fixed": "#dfe3e9",
+              "on-secondary-container": "#b4b9c1"
+            },
+            fontFamily: {
+              "headline": ["Space Grotesk"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .brutal-noise {
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        opacity: 0.03;
+      }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body min-h-screen flex flex-col">
+<!-- TopNavBar Execution -->
+<nav class="fixed top-0 w-full z-50 bg-[#131313] flex justify-between items-center px-8 h-16 w-full">
+<div class="flex items-center gap-8">
+<span class="text-xl font-black text-white tracking-tighter font-headline uppercase">TECH-SPEC ADMIN</span>
+<div class="hidden md:flex gap-6">
+<a class="font-headline font-bold tracking-tight uppercase text-gray-400 hover:text-white transition-colors" href="#">Inventory</a>
+<a class="font-headline font-bold tracking-tight uppercase text-gray-400 hover:text-white transition-colors" href="#">Orders</a>
+<a class="font-headline font-bold tracking-tight uppercase text-gray-400 hover:text-white transition-colors" href="#">Telemetry</a>
+<a class="font-headline font-bold tracking-tight uppercase text-gray-400 hover:text-white transition-colors" href="#">Support</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-gray-400 cursor-pointer hover:text-white transition-colors">notifications</span>
+<span class="material-symbols-outlined text-gray-400 cursor-pointer hover:text-white transition-colors">settings</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="Admin profile avatar" class="w-full h-full object-cover" data-alt="Close up portrait of a tactical operator wearing high-tech glasses in dark moody lighting with orange highlights" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWaZwERgZFMvRcOCthWKT8ljmRkqupLISN1vfYtuzrv6ir85Vh2BkMHnPlIooTwxBTidK8jV0muctbW-V2fPrEpq3Frc3jtb1P1CX6_yzvjdSW_kDlT1AguF09oeZCvSrblW24n8v4au7Ucmkimn_EjyRMqNIAo-vgu2xBlvCf0-DeFVj25YPsiwLrTZg0TITSUIww_DHvxJUuEMHDYqVM6S4nveb-r2AJFr7qCeuxPN33P33wxIwnCuGRq4yf9YADdrkG0RM43KGB"/>
+</div>
+</div>
+</nav>
+<!-- SideNavBar Execution -->
+<aside class="fixed left-0 h-full w-64 z-40 bg-[#1c1b1b] border-r border-[#5d4038]/15 flex flex-col pt-20">
+<div class="px-6 mb-8">
+<h3 class="font-headline text-xs font-bold uppercase tracking-widest text-[#ff5625]">OPERATOR_01</h3>
+<p class="text-[10px] text-gray-500 font-mono">SYSTEM_LEVEL_ADMIN</p>
+</div>
+<nav class="flex-1">
+<a class="flex items-center gap-4 text-gray-500 px-6 py-4 hover:bg-[#2a2a2a] hover:text-gray-200 transition-all font-headline text-xs font-bold uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-4 bg-[#2a2a2a] text-[#ff5625] px-6 py-4 border-l-4 border-[#ff5625] font-headline text-xs font-bold uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">precision_manufacturing</span> Global Fleet
+            </a>
+<a class="flex items-center gap-4 text-gray-500 px-6 py-4 hover:bg-[#2a2a2a] hover:text-gray-200 transition-all font-headline text-xs font-bold uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">settings_input_component</span> Strategic Ops
+            </a>
+<a class="flex items-center gap-4 text-gray-500 px-6 py-4 hover:bg-[#2a2a2a] hover:text-gray-200 transition-all font-headline text-xs font-bold uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">local_shipping</span> Logistics
+            </a>
+<a class="flex items-center gap-4 text-gray-500 px-6 py-4 hover:bg-[#2a2a2a] hover:text-gray-200 transition-all font-headline text-xs font-bold uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">terminal</span> System Logs
+            </a>
+</nav>
+<div class="mt-auto pb-8">
+<a class="flex items-center gap-4 text-gray-500 px-6 py-4 hover:bg-[#2a2a2a] hover:text-gray-200 transition-all font-headline text-xs font-bold uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">logout</span> Logout
+            </a>
+</div>
+</aside>
+<!-- Main Content -->
+<main class="ml-64 pt-24 px-12 pb-12 flex-1">
+<header class="mb-12">
+<h1 class="text-4xl font-headline font-black text-white tracking-tighter uppercase mb-2">Interface Protocol</h1>
+<p class="text-primary font-label text-sm tracking-[0.2em] uppercase">Tactical Notification Systems v2.04</p>
+</header>
+<!-- Bento Grid for Modals -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<!-- SUCCESS MODAL -->
+<div class="relative bg-surface-container-low p-8 border border-outline-variant/15 group overflow-hidden">
+<div class="absolute inset-0 brutal-noise pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-green-500/10 flex items-center justify-center text-green-500">
+<span class="material-symbols-outlined text-3xl">satellite_alt</span>
+</div>
+<h2 class="text-xl font-headline font-extrabold text-white tracking-tight uppercase">LOGISTICS SEQUENCE SYNCED</h2>
+</div>
+<div class="space-y-4 mb-10">
+<p class="text-on-surface-variant font-body leading-relaxed">
+                            Order <span class="text-white font-mono">#ATM-9023</span> has been successfully synchronized with the regional logistics terminal. All supply chain nodes are currently broadcasting matching hash signatures.
+                        </p>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-widest">
+                            LATENCY: 42MS
+                        </div>
+</div>
+<div class="flex gap-4">
+<button class="bg-gradient-to-br from-primary to-primary-container text-on-primary font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 active:scale-95 transition-all">
+                            CONTINUE
+                        </button>
+<button class="bg-surface-container-highest text-white font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 hover:bg-surface-bright transition-colors border border-outline-variant/20">
+                            PRINT LOG
+                        </button>
+</div>
+</div>
+</div>
+<!-- ERROR MODAL -->
+<div class="relative bg-surface-container-low p-8 border border-outline-variant/15 group overflow-hidden">
+<div class="absolute inset-0 brutal-noise pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-red-500/10 flex items-center justify-center text-red-500">
+<span class="material-symbols-outlined text-3xl">terminal</span>
+</div>
+<h2 class="text-xl font-headline font-extrabold text-white tracking-tight uppercase">SYSTEM PROTOCOL FAILURE</h2>
+</div>
+<div class="space-y-4 mb-10">
+<p class="text-on-surface-variant font-body leading-relaxed">
+                            Handshake failure detected on <span class="text-white font-mono">SECURE_CHANNEL_07</span>. The cryptographic key provided does not match the mission profile. Immediate intervention required to prevent data leakage.
+                        </p>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-error-container text-on-error-container text-[10px] font-bold uppercase tracking-widest">
+                            ERROR CODE: 0x882
+                        </div>
+</div>
+<div class="flex gap-4">
+<button class="bg-surface-container-highest text-white font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 active:scale-95 transition-all border-b-2 border-red-500/50">
+                            ABORT
+                        </button>
+<button class="text-primary font-headline font-bold text-xs uppercase tracking-widest px-4 py-3 underline decoration-2 underline-offset-4 hover:text-white transition-colors">
+                            DEBUG TERMINAL
+                        </button>
+</div>
+</div>
+</div>
+<!-- WARNING MODAL -->
+<div class="relative bg-surface-container-low p-8 border border-outline-variant/15 group overflow-hidden">
+<div class="absolute inset-0 brutal-noise pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-amber-500/10 flex items-center justify-center text-amber-500">
+<span class="material-symbols-outlined text-3xl">warning</span>
+</div>
+<h2 class="text-xl font-headline font-extrabold text-white tracking-tight uppercase">CRITICAL INVENTORY THRESHOLD</h2>
+</div>
+<div class="space-y-4 mb-10">
+<p class="text-on-surface-variant font-body leading-relaxed">
+                            Aluminum pannier stock levels have dropped below <span class="text-white font-mono">15%</span> capacity. Automated reorder systems are suspended pending manual override. Supply chain disruption imminent.
+                        </p>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-amber-900/30 text-amber-200 text-[10px] font-bold uppercase tracking-widest border border-amber-500/20">
+                            PRIORITY: DELTA
+                        </div>
+</div>
+<div class="flex gap-4">
+<button class="bg-amber-600 text-on-background font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 hover:bg-amber-500 transition-colors">
+                            PROCEED WITH CAUTION
+                        </button>
+<button class="bg-surface-container-highest text-white font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 border border-outline-variant/20">
+                            BACK TO DASHBOARD
+                        </button>
+</div>
+</div>
+</div>
+<!-- INFO MODAL -->
+<div class="relative bg-surface-container-low p-8 border border-outline-variant/15 group overflow-hidden">
+<div class="absolute inset-0 brutal-noise pointer-events-none"></div>
+<div class="relative z-10">
+<div class="flex items-center gap-4 mb-8">
+<div class="w-12 h-12 bg-blue-500/10 flex items-center justify-center text-blue-400">
+<span class="material-symbols-outlined text-3xl">info</span>
+</div>
+<h2 class="text-xl font-headline font-extrabold text-white tracking-tight uppercase">TELEMETRY UPDATE READY</h2>
+</div>
+<div class="space-y-4 mb-10">
+<p class="text-on-surface-variant font-body leading-relaxed">
+                            New performance maps are available for the <span class="text-white font-mono">T-SERIES GEAR</span>. Version 4.12 introduces enhanced load-balancing algorithms for long-range logistics missions.
+                        </p>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-900/30 text-blue-200 text-[10px] font-bold uppercase tracking-widest border border-blue-500/20">
+                            FIRMWARE: V4.12
+                        </div>
+</div>
+<div class="flex gap-4">
+<button class="bg-white text-black font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 hover:bg-primary transition-colors">
+                            VIEW SPECS
+                        </button>
+<button class="bg-surface-container-highest text-white font-headline font-bold text-xs uppercase tracking-widest px-8 py-3 border border-outline-variant/20">
+                            LATER
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- System Background Decor -->
+<div class="mt-20 opacity-20">
+<div class="w-full h-px bg-gradient-to-r from-transparent via-outline-variant to-transparent mb-1"></div>
+<div class="flex justify-between text-[10px] font-mono text-gray-500">
+<span>00:12:59 // SYSTEM_STATUS: NOMINAL</span>
+<span>CRYPTOGRAPHIC_HASH: 77A8...F0E2</span>
+<span>UPTIME: 14:22:04:12</span>
+</div>
+</div>
+</main>
+<!-- Footer Execution -->
+<footer class="w-full py-8 mt-auto border-t border-[#5d4038]/15 bg-[#131313]">
+<div class="flex flex-col md:flex-row justify-between items-center px-8 max-w-7xl mx-auto gap-4">
+<span class="font-body text-[10px] uppercase tracking-[0.2em] text-gray-600">©2024 TECHNICAL BRUTALISM // MISSION CRITICAL GEAR</span>
+<div class="flex gap-8">
+<a class="font-body text-[10px] uppercase tracking-[0.2em] text-gray-600 hover:text-white transition-colors" href="#">Privacy Protocol</a>
+<a class="font-body text-[10px] uppercase tracking-[0.2em] text-gray-600 hover:text-white transition-colors" href="#">Service Level Agreement</a>
+<a class="font-body text-[10px] uppercase tracking-[0.2em] text-gray-600 hover:text-white transition-colors" href="#">Telemetry API</a>
+</div>
+</div>
+</footer>
+</body></html>

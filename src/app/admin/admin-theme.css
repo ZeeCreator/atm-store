@@ -1,0 +1,93 @@
+/* Admin Panel Brutalist Theme */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
+
+.admin-brutal {
+  font-family: 'Inter', sans-serif;
+}
+
+.admin-brutal .headline {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+/* Noise Texture */
+.noise-bg {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+}
+
+/* Custom Scrollbar */
+.admin-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.admin-scroll::-webkit-scrollbar-track {
+  background: #1c1b1b;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb {
+  background: #5d4038;
+  border-radius: 3px;
+}
+
+.admin-scroll::-webkit-scrollbar-thumb:hover {
+  background: #ff5625;
+}
+
+/* Sidebar Active State */
+.sidebar-active {
+  background: #1c1b1b;
+  color: #FF4500;
+  border-left: 4px solid #FF4500;
+}
+
+.sidebar-inactive {
+  color: #9ca3af;
+  border-left: 4px solid transparent;
+}
+
+.sidebar-inactive:hover {
+  background: #2a2a2a;
+  color: #ffffff;
+}
+
+/* KPI Card Hover */
+.kpi-card {
+  transition: all 0.3s ease;
+}
+
+.kpi-card:hover {
+  background: #2a2a2a;
+  transform: translateY(-2px);
+}
+
+/* Button Anim */
+.btn-brutal {
+  transition: all 0.2s ease;
+}
+
+.btn-brutal:active {
+  transform: scale(0.95);
+}
+
+/* Table Row Hover */
+.table-row-brutal:hover {
+  background: #2a2a2a;
+}
+
+/* Status Badge */
+.status-badge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 4px 8px;
+  border-radius: 2px;
+}
+
+/* Input Focus */
+.input-brutal:focus {
+  border-color: #FF4500;
+  outline: none;
+  box-shadow: 0 1px 0 0 #FF4500;
+}

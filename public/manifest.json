@@ -1,0 +1,78 @@
+{
+  "name": "ATM Autolighting Madiun - Aksesoris Motor Touring",
+  "short_name": "ATM Autolighting",
+  "description": "Pusat aksesoris motor touring terlengkap dan terpercaya di Madiun. Helm, jaket, touring boxes, dan aksesoris berkualitas.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#131313",
+  "theme_color": "#ef4444",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["shopping", "lifestyle", "business"],
+  "lang": "id-ID",
+  "dir": "ltr",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Produk",
+      "short_name": "Produk",
+      "description": "Lihat katalog produk",
+      "url": "/products",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Tentang Kami",
+      "short_name": "Tentang",
+      "description": "Informasi tentang ATM Autolighting",
+      "url": "/about",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "WhatsApp",
+      "short_name": "WA",
+      "description": "Hubungi kami via WhatsApp",
+      "url": "https://wa.me/6282232760393",
+      "icons": [
+        {
+          "src": "/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "screenshots": [],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
