@@ -51,6 +51,7 @@ export default function AdminPage() {
   const { user, loading: authLoading, logout } = useAuth();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeSettingsTab, setActiveSettingsTab] = useState('auth');
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
   const [siteSettings, setSiteSettings] = useState<any>(null);
@@ -129,6 +130,35 @@ export default function AdminPage() {
     heroSubtitle: 'Engineered for the long haul.',
     heroImage: '',
     whatsappNumber: '6281234567890',
+    whatsappMessageTemplate: `*Halo {storeName}, saya ingin memesan:* 🛒
+
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *ORDER DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *PRICING SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: {subtotal}
+Shipping: _Calculated by admin_
+
+*TOTAL: {total} + Ongkir*
+
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *CUSTOMER INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+Name: {name}
+Phone: {phone}
+Address: {address}
+Notes: {notes}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *Order Number: {orderNumber}*
+⏰ {timestamp}
+
+_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
     storeName: 'Aksesoris Touring Madiun',
     instagramTag: '#AksesorisTouringMadiun',
     aboutStory: '',
@@ -212,6 +242,35 @@ export default function AdminPage() {
             heroSubtitle: data.hero?.subtitle || 'Engineered for the long haul.',
             heroImage: data.hero?.image || '',
             whatsappNumber: data.contact?.whatsappNumber || '6281234567890',
+            whatsappMessageTemplate: data.message?.template || `*Halo {storeName}, saya ingin memesan:* 🛒
+
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *ORDER DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *PRICING SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: {subtotal}
+Shipping: _Calculated by admin_
+
+*TOTAL: {total} + Ongkir*
+
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *CUSTOMER INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+Name: {name}
+Phone: {phone}
+Address: {address}
+Notes: {notes}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *Order Number: {orderNumber}*
+⏰ {timestamp}
+
+_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
             storeName: data.store?.name || 'Aksesoris Touring Madiun',
             instagramTag: data.social?.instagramTag || '#AksesorisTouringMadiun',
             aboutStory: data.about?.storyContent || '',
@@ -571,6 +630,9 @@ export default function AdminPage() {
         },
         contact: {
           whatsappNumber: sanitizeInput(settingsForm.whatsappNumber),
+        },
+        message: {
+          template: settingsForm.whatsappMessageTemplate,
         },
         store: {
           name: sanitizeInput(settingsForm.storeName),
@@ -1923,9 +1985,73 @@ export default function AdminPage() {
             <i className="fa-solid fa-gear text-[#FF4500] mr-2"></i>
             {t.admin.settings}
           </h3>
-          
-          <div className="space-y-8">
-            {/* Authentication Settings */}
+
+          {/* Settings Sub-Tabs */}
+          <div className="flex flex-wrap gap-2 mb-6 border-b border-outline-variant/30 pb-4">
+            <button
+              onClick={() => setActiveSettingsTab('auth')}
+              className={`px-4 py-2 font-headline font-bold text-xs uppercase tracking-widest rounded transition-colors ${
+                activeSettingsTab === 'auth'
+                  ? 'bg-[#FF4500] text-white'
+                  : 'bg-surface-container-highest text-white/60 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-lock mr-2"></i>Authentication
+            </button>
+            <button
+              onClick={() => setActiveSettingsTab('hero')}
+              className={`px-4 py-2 font-headline font-bold text-xs uppercase tracking-widest rounded transition-colors ${
+                activeSettingsTab === 'hero'
+                  ? 'bg-[#FF4500] text-white'
+                  : 'bg-surface-container-highest text-white/60 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-image mr-2"></i>Hero Section
+            </button>
+            <button
+              onClick={() => setActiveSettingsTab('contact')}
+              className={`px-4 py-2 font-headline font-bold text-xs uppercase tracking-widest rounded transition-colors ${
+                activeSettingsTab === 'contact'
+                  ? 'bg-[#FF4500] text-white'
+                  : 'bg-surface-container-highest text-white/60 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-phone mr-2"></i>Contact & WhatsApp
+            </button>
+            <button
+              onClick={() => setActiveSettingsTab('store')}
+              className={`px-4 py-2 font-headline font-bold text-xs uppercase tracking-widest rounded transition-colors ${
+                activeSettingsTab === 'store'
+                  ? 'bg-[#FF4500] text-white'
+                  : 'bg-surface-container-highest text-white/60 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-store mr-2"></i>Store Info
+            </button>
+            <button
+              onClick={() => setActiveSettingsTab('social')}
+              className={`px-4 py-2 font-headline font-bold text-xs uppercase tracking-widest rounded transition-colors ${
+                activeSettingsTab === 'social'
+                  ? 'bg-[#FF4500] text-white'
+                  : 'bg-surface-container-highest text-white/60 hover:text-white'
+              }`}
+            >
+              <i className="fa-brands fa-instagram mr-2"></i>Social Media
+            </button>
+            <button
+              onClick={() => setActiveSettingsTab('about')}
+              className={`px-4 py-2 font-headline font-bold text-xs uppercase tracking-widest rounded transition-colors ${
+                activeSettingsTab === 'about'
+                  ? 'bg-[#FF4500] text-white'
+                  : 'bg-surface-container-highest text-white/60 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-book mr-2"></i>About Page
+            </button>
+          </div>
+
+          {/* Authentication Settings Tab */}
+          {activeSettingsTab === 'auth' && (
             <div className="border border-outline-variant/30 rounded p-6">
               <h4 className="text-lg font-headline font-bold uppercase text-white mb-4 flex items-center gap-2">
                 <i className="fa-solid fa-lock text-[#FF4500]"></i>
@@ -1956,8 +2082,10 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Hero Section Settings */}
+          {/* Hero Section Settings Tab */}
+          {activeSettingsTab === 'hero' && (
             <div className="border border-outline-variant/30 rounded p-6">
               <h4 className="text-lg font-headline font-bold uppercase text-white mb-4 flex items-center gap-2">
                 <i className="fa-solid fa-image text-[#FF4500]"></i>
@@ -2006,12 +2134,14 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Contact Settings */}
+          {/* Contact & WhatsApp Settings Tab */}
+          {activeSettingsTab === 'contact' && (
             <div className="border border-outline-variant/30 rounded p-6">
               <h4 className="text-lg font-headline font-bold uppercase text-white mb-4 flex items-center gap-2">
                 <i className="fa-solid fa-phone text-[#FF4500]"></i>
-                {t.admin.contactSettings}
+                Contact & WhatsApp
               </h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -2038,9 +2168,48 @@ export default function AdminPage() {
                   />
                 </div>
               </div>
+              <div className="mt-6">
+                <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                  WhatsApp Message Template
+                </label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Available placeholders: {'{storeName}'}, {'{items}'}, {'{subtotal}'}, {'{total}'}, {'{name}'}, {'{phone}'}, {'{address}'}, {'{notes}'}, {'{orderNumber}'}, {'{timestamp}'}
+                </p>
+                <textarea
+                  value={settingsForm.whatsappMessageTemplate}
+                  onChange={(e) => setSettingsForm({ ...settingsForm, whatsappMessageTemplate: e.target.value })}
+                  rows={12}
+                  className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-[#FF4500] focus:ring-0 input-brutal font-mono text-sm"
+                />
+              </div>
             </div>
+          )}
 
-            {/* Social Media Settings */}
+          {/* Store Info Settings Tab */}
+          {activeSettingsTab === 'store' && (
+            <div className="border border-outline-variant/30 rounded p-6">
+              <h4 className="text-lg font-headline font-bold uppercase text-white mb-4 flex items-center gap-2">
+                <i className="fa-solid fa-store text-[#FF4500]"></i>
+                Store Information
+              </h4>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                    {t.admin.storeName}
+                  </label>
+                  <input
+                    type="text"
+                    value={settingsForm.storeName}
+                    onChange={(e) => setSettingsForm({ ...settingsForm, storeName: e.target.value })}
+                    className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-[#FF4500] focus:ring-0 input-brutal"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Social Media Settings Tab */}
+          {activeSettingsTab === 'social' && (
             <div className="border border-outline-variant/30 rounded p-6">
               <h4 className="text-lg font-headline font-bold uppercase text-white mb-4 flex items-center gap-2">
                 <i className="fa-brands fa-instagram text-[#FF4500]"></i>
@@ -2059,12 +2228,14 @@ export default function AdminPage() {
                 />
               </div>
             </div>
+          )}
 
-            {/* About Page Settings */}
+          {/* About Page Settings Tab */}
+          {activeSettingsTab === 'about' && (
             <div className="border border-outline-variant/30 rounded p-6">
               <h4 className="text-lg font-headline font-bold uppercase text-white mb-4 flex items-center gap-2">
                 <i className="fa-solid fa-book text-[#FF4500]"></i>
-                {t.admin.aboutStory}
+                About Page
               </h4>
               <div>
                 <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
@@ -2079,43 +2250,72 @@ export default function AdminPage() {
                 />
               </div>
             </div>
+          )}
 
-            {/* Save & Reset Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-outline-variant/30">
-              <button
-                onClick={handleSaveSettings}
-                className="flex-1 bg-gradient-to-br from-primary to-primary-container px-6 py-3 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center justify-center gap-2 hover:from-primary-container hover:to-primary transition-all shadow-lg shadow-primary/20 text-sm sm:text-base"
-              >
-                <i className="fa-solid fa-save"></i>
-                {t.admin.saveSettings}
-              </button>
-              <button
-                onClick={() => {
-                  setSettingsForm({
-                    username: 'admin',
-                    password: 'admin',
-                    heroTitle: 'Equip Your Adventure',
-                    heroSubtitle: 'Engineered for the long haul.',
-                    heroImage: '',
-                    whatsappNumber: '6281234567890',
-                    storeName: 'Aksesoris Touring Madiun',
-                    instagramTag: '#AksesorisTouringMadiun',
-                    aboutStory: '',
-                  });
-                  showAlert({
-                    type: 'info',
-                    title: 'SETTINGS RESET',
-                    message: 'Settings have been reset to default.',
-                    badgeText: 'RESET',
-                    badgeColor: 'bg-blue-900/30 text-blue-200',
-                  });
-                }}
-                className="flex-1 bg-surface-container-highest px-6 py-3 font-headline font-bold uppercase tracking-widest text-white rounded-md border border-outline-variant/20 btn-brutal flex items-center justify-center gap-2 hover:bg-surface-bright transition-all text-sm sm:text-base"
-              >
-                <i className="fa-solid fa-rotate-left"></i>
-                Reset Default
-              </button>
-            </div>
+          {/* Save & Reset Buttons - Always visible */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-outline-variant/30 mt-6">
+            <button
+              onClick={handleSaveSettings}
+              className="flex-1 bg-gradient-to-br from-primary to-primary-container px-6 py-3 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center justify-center gap-2 hover:from-primary-container hover:to-primary transition-all shadow-lg shadow-primary/20 text-sm sm:text-base"
+            >
+              <i className="fa-solid fa-save"></i>
+              {t.admin.saveSettings}
+            </button>
+            <button
+              onClick={() => {
+                setSettingsForm({
+                  username: 'admin',
+                  password: 'admin',
+                  heroTitle: 'Equip Your Adventure',
+                  heroSubtitle: 'Engineered for the long haul.',
+                  heroImage: '',
+                  whatsappNumber: '6281234567890',
+                  whatsappMessageTemplate: `*Halo {storeName}, saya ingin memesan:* 🛒
+
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *ORDER DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *PRICING SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: {subtotal}
+Shipping: _Calculated by admin_
+
+*TOTAL: {total} + Ongkir*
+
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *CUSTOMER INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+Name: {name}
+Phone: {phone}
+Address: {address}
+Notes: {notes}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *Order Number: {orderNumber}*
+⏰ {timestamp}
+
+_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
+                  storeName: 'Aksesoris Touring Madiun',
+                  instagramTag: '#AksesorisTouringMadiun',
+                  aboutStory: '',
+                });
+                showAlert({
+                  type: 'info',
+                  title: 'SETTINGS RESET',
+                  message: 'Settings have been reset to default.',
+                  badgeText: 'RESET',
+                  badgeColor: 'bg-blue-900/30 text-blue-200',
+                });
+              }}
+              className="flex-1 bg-surface-container-highest px-6 py-3 font-headline font-bold uppercase tracking-widest text-white rounded-md border border-outline-variant/20 btn-brutal flex items-center justify-center gap-2 hover:bg-surface-bright transition-all text-sm sm:text-base"
+            >
+              <i className="fa-solid fa-rotate-left"></i>
+              Reset Default
+            </button>
           </div>
         </div>
       )}

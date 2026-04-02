@@ -3,6 +3,7 @@
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Suspense } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
@@ -16,9 +17,7 @@ function SuccessContent() {
       <main className="pt-20 md:pt-28 pb-20 px-4 md:px-8 max-w-[1920px] mx-auto min-h-screen">
         <div className="max-w-2xl mx-auto text-center py-12 md:py-20">
           <div className="w-20 h-20 md:w-24 md:h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 md:mb-8">
-            <span className="material-symbols-outlined text-4xl md:text-5xl text-green-500">
-              check_circle
-            </span>
+            <FontAwesomeIcon icon="check-circle" className="text-4xl md:text-5xl text-green-500" />
           </div>
 
           <h1 className="font-headline text-2xl md:text-4xl font-black uppercase tracking-tighter text-white mb-3 md:mb-4">
@@ -101,9 +100,7 @@ export default function SuccessPage() {
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <span className="material-symbols-outlined text-5xl text-primary-container animate-spin">
-            progress_activity
-          </span>
+          <FontAwesomeIcon icon="circle-notch" spin className="text-5xl text-primary-container" />
         </div>
       </div>
     }>

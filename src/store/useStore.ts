@@ -5,6 +5,63 @@ import { persist } from 'zustand/middleware';
 import { ref, onValue, set as setFirebase } from 'firebase/database';
 import { db } from '@/lib/firebase';
 
+// Sync site settings from Firebase
+let settingsUnsubscribe: (() => void) | null = null;
+
+function subscribeToSettings(set: any) {
+  if (settingsUnsubscribe) {
+    settingsUnsubscribe();
+  }
+  
+  const settingsRef = ref(db, 'settings');
+  settingsUnsubscribe = onValue(settingsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      set({
+        siteSettings: {
+          storeName: data.store?.name || 'Aksesoris Touring Madiun',
+          whatsappNumber: data.contact?.whatsappNumber || '6281234567890',
+          whatsappMessageTemplate: data.message?.template || `*Halo {storeName}, saya ingin memesan:* 🛒
+
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *ORDER DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *PRICING SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: {subtotal}
+Shipping: _Calculated by admin_
+
+*TOTAL: {total} + Ongkir*
+
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *CUSTOMER INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+Name: {name}
+Phone: {phone}
+Address: {address}
+Notes: {notes}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *Order Number: {orderNumber}*
+⏰ {timestamp}
+
+_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
+          heroImage: data.hero?.image || '',
+          heroTitle: data.hero?.title || 'Equip Your Adventure',
+          heroSubtitle: data.hero?.subtitle || 'Engineered for the long haul.',
+          primaryColor: data.theme?.primaryColor || '#ffb5a0',
+          secondaryColor: data.theme?.secondaryColor || '#ff5625',
+          logoText: data.store?.name || 'Aksesoris Touring Madiun',
+        },
+      });
+    }
+  });
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -57,6 +114,7 @@ export interface Order {
 interface SiteSettings {
   storeName: string;
   whatsappNumber: string;
+  whatsappMessageTemplate: string;
   heroImage: string;
   heroTitle: string;
   heroSubtitle: string;
@@ -87,6 +145,7 @@ interface StoreState {
   // Site Settings (Customizable)
   siteSettings: SiteSettings;
   updateSiteSettings: (settings: Partial<SiteSettings>) => void;
+  initSettingsSubscription: () => void;
   
   // Products (will be synced with Firebase)
   products: Product[];
@@ -96,6 +155,35 @@ interface StoreState {
 const defaultSiteSettings: SiteSettings = {
   storeName: 'Aksesoris Touring Madiun',
   whatsappNumber: '6281234567890',
+  whatsappMessageTemplate: `*Halo {storeName}, saya ingin memesan:* 🛒
+
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *ORDER DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
+
+{items}
+
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *PRICING SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: {subtotal}
+Shipping: _Calculated by admin_
+
+*TOTAL: {total} + Ongkir*
+
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *CUSTOMER INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+Name: {name}
+Phone: {phone}
+Address: {address}
+Notes: {notes}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *Order Number: {orderNumber}*
+⏰ {timestamp}
+
+_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
   heroImage: 'https://lh3.googleusercontent.com/aida-public/AB6AXuA3SIGEMLJKTAGSvfZLNUk23ehbscIccY93e9o9B4oHTKZwV_fNUZLk176YklwB7_nu6loNmoF2TsJ51qKDMML9KHVWSQV2kmaKwVs0YQ6g3t4o0tI5s0hRwpgF3MMWimlPfuQC0GJqj2PzLUHkbuRmQ0m2wB-czbBV5zkj4f6g6Mg-UQFvuoFth8VcOzi6MZH_0issVQKTqvZrcQcYsu3HaW7FbzfZ97tqYPSS7mGPTvAqt6V4orlq8ZBmfrkoPUNykrJcsc05sPsz',
   heroTitle: 'Equip Your Adventure',
   heroSubtitle: 'Engineered for the long haul. High-performance touring accessories designed for the rugged terrain of Madiun and beyond.',
@@ -117,6 +205,14 @@ export const useStore = create<StoreState>()(
         }
         set(() => ({ userId }));
         get().syncCartWithFirebase();
+        
+        // Subscribe to settings updates from Firebase
+        subscribeToSettings(set);
+      },
+
+      // Initialize settings subscription (call this on app load)
+      initSettingsSubscription: () => {
+        subscribeToSettings(set);
       },
       
       // Cart State

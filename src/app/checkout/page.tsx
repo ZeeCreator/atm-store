@@ -45,45 +45,60 @@ export default function CheckoutPage() {
   const generateWhatsAppMessage = (orderNumber: string) => {
     const subtotal = (cart || []).reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    let message = `*Halo ${siteSettings.storeName}, saya ingin memesan:* 🛒\n\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `📋 *ORDER DETAILS*\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-
-    // Items
-    cart.forEach((item, index) => {
-      message += `${index + 1}. *${item.name}*`;
+    // Generate items string
+    const itemsString = cart.map((item, index) => {
+      let itemStr = `${index + 1}. *${item.name}*`;
       if (item.variant) {
-        message += ` (${item.variant})`;
+        itemStr += ` (${item.variant})`;
       }
-      message += `\n`;
-      message += `   └─ Qty: ${item.quantity} x ${formatPrice(item.price)}\n`;
-      message += `   └─ Subtotal: *${formatPrice(item.price * item.quantity)}*\n\n`;
-    });
+      itemStr += `\n   └─ Qty: ${item.quantity} x ${formatPrice(item.price)}\n`;
+      itemStr += `   └─ Subtotal: *${formatPrice(item.price * item.quantity)}*\n`;
+      return itemStr;
+    }).join('\n');
 
-    message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `💰 *PRICING SUMMARY*\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `Subtotal: ${formatPrice(subtotal)}\n`;
-    message += `Shipping: _Calculated by admin_\n`;
-    message += `\n*TOTAL: ${formatPrice(subtotal)} + Ongkir*\n\n`;
+    // Get template from siteSettings or use default
+    const template = siteSettings.whatsappMessageTemplate || `*Halo {storeName}, saya ingin memesan:* 🛒
 
-    // Customer Info
-    message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `👤 *CUSTOMER INFORMATION*\n`;
-    message += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `Name: ${customerInfo.name}\n`;
-    message += `Phone: ${customerInfo.phone}\n`;
-    message += `Address: ${customerInfo.address}\n`;
+━━━━━━━━━━━━━━━━━━━━━━
+📋 *ORDER DETAILS*
+━━━━━━━━━━━━━━━━━━━━━━
 
-    if (customerInfo.notes) {
-      message += `Notes: ${customerInfo.notes}\n`;
-    }
+{items}
 
-    message += `\n━━━━━━━━━━━━━━━━━━━━━━\n`;
-    message += `📦 *Order Number: ${orderNumber}*\n`;
-    message += `⏰ ${new Date().toLocaleString('id-ID')}\n\n`;
-    message += `_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`;
+━━━━━━━━━━━━━━━━━━━━━━
+💰 *PRICING SUMMARY*
+━━━━━━━━━━━━━━━━━━━━━━
+Subtotal: {subtotal}
+Shipping: _Calculated by admin_
+
+*TOTAL: {total} + Ongkir*
+
+━━━━━━━━━━━━━━━━━━━━━━
+👤 *CUSTOMER INFORMATION*
+━━━━━━━━━━━━━━━━━━━━━━
+Name: {name}
+Phone: {phone}
+Address: {address}
+Notes: {notes}
+
+━━━━━━━━━━━━━━━━━━━━━━
+📦 *Order Number: {orderNumber}*
+⏰ {timestamp}
+
+_Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`;
+
+    // Replace placeholders
+    let message = template
+      .replace(/{storeName}/g, siteSettings.storeName)
+      .replace(/{items}/g, itemsString)
+      .replace(/{subtotal}/g, formatPrice(subtotal))
+      .replace(/{total}/g, formatPrice(subtotal))
+      .replace(/{name}/g, customerInfo.name)
+      .replace(/{phone}/g, customerInfo.phone)
+      .replace(/{address}/g, customerInfo.address)
+      .replace(/{notes}/g, customerInfo.notes || '-')
+      .replace(/{orderNumber}/g, orderNumber)
+      .replace(/{timestamp}/g, new Date().toLocaleString('id-ID'));
 
     return message;
   };

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Icons } from '@/components/Icon';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 type AlertType = 'success' | 'error' | 'warning' | 'info';
 
@@ -20,7 +21,7 @@ interface AlertPopupProps {
 }
 
 const alertConfig: Record<AlertType, { icon: React.ReactNode; iconColor: string; bgColor: string }> = {
-  success: { icon: <Icons.Check className="text-3xl" />, iconColor: 'text-green-500', bgColor: 'bg-green-500/10' },
+  success: { icon: <FontAwesomeIcon icon="check-circle" className="text-3xl" />, iconColor: 'text-green-500', bgColor: 'bg-green-500/10' },
   error: { icon: <Icons.Delete className="text-3xl" />, iconColor: 'text-red-500', bgColor: 'bg-red-500/10' },
   warning: { icon: <Icons.Warning className="text-3xl" />, iconColor: 'text-amber-500', bgColor: 'bg-amber-500/10' },
   info: { icon: <Icons.Info className="text-3xl" />, iconColor: 'text-blue-400', bgColor: 'bg-blue-500/10' },

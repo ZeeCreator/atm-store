@@ -14,7 +14,7 @@ export default function HeroSection() {
   const [heroData, setHeroData] = useState({
     title: siteSettings?.heroTitle || t.hero.title,
     subtitle: siteSettings?.heroSubtitle || t.hero.subtitle,
-    image: siteSettings?.heroImage || '',
+    image: siteSettings?.heroImage && siteSettings.heroImage !== '' ? siteSettings.heroImage : 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80',
   });
 
   useEffect(() => {
@@ -22,11 +22,19 @@ export default function HeroSection() {
     const settingsRef = ref(db, 'settings');
     const unsubscribe = onValue(settingsRef, (snapshot) => {
       const data = snapshot.val();
-      if (data?.hero) {
+      if (data) {
+        const heroImage = data?.hero?.image && data.hero.image !== '' 
+          ? data.hero.image 
+          : siteSettings?.heroImage && siteSettings.heroImage !== '' 
+            ? siteSettings.heroImage 
+            : 'https://images.unsplash.com/photo-1558981403-c5f9899a28bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80';
+        const heroTitle = data?.hero?.title || siteSettings?.heroTitle || t.hero.title;
+        const heroSubtitle = data?.hero?.subtitle || siteSettings?.heroSubtitle || t.hero.subtitle;
+        
         setHeroData({
-          title: data.hero.title || siteSettings?.heroTitle || t.hero.title,
-          subtitle: data.hero.subtitle || siteSettings?.heroSubtitle || t.hero.subtitle,
-          image: data.hero.image || siteSettings?.heroImage || '',
+          title: heroTitle,
+          subtitle: heroSubtitle,
+          image: heroImage,
         });
       }
     });
