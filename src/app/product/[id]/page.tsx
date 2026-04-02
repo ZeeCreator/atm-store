@@ -6,14 +6,16 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import SEO from '@/components/SEO';
-import { useStore, type Product, type CartItem } from '@/store/useStore';
+import { useStore, type Product } from '@/store/useStore';
+import { useCart, type CartItem } from '@/contexts/CartContext';
 import { ref, onValue } from 'firebase/database';
 import { db } from '@/lib/firebase';
 
 export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { addToCart, siteSettings } = useStore();
+  const { siteSettings } = useStore();
+  const { addToCart } = useCart();
   const [product, setProduct] = useState<Product | null>(null);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<string>('');
@@ -54,6 +56,9 @@ export default function ProductDetailPage() {
     };
 
     addToCart(cartItem);
+    
+    // Show success message
+    alert(`${product.name} has been added to your cart!`);
   };
 
   const handleBuyNow = () => {
