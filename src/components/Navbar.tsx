@@ -166,6 +166,9 @@ export default function Navbar() {
           <Link href="/products" className={getNavLinkClasses('/products')}>
             {t.nav.products}
           </Link>
+          <Link href="/instagram" className={getNavLinkClasses('/instagram')}>
+            Postingan
+          </Link>
           <a
             href="#features"
             onClick={(e) => handleFeaturesClick(e, false)}
@@ -220,6 +223,9 @@ export default function Navbar() {
             </Link>
             <Link href="/products" className={getNavLinkClasses('/products')} onClick={() => setIsMenuOpen(false)}>
               {t.nav.products}
+            </Link>
+            <Link href="/instagram" className={getNavLinkClasses('/instagram')} onClick={() => setIsMenuOpen(false)}>
+              Postingan
             </Link>
             <a
               href="#features"

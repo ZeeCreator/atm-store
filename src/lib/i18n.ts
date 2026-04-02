@@ -156,6 +156,15 @@ export interface Translation {
     creditsATM: string;
   };
 
+  // Instagram Page
+  instagram: {
+    title: string;
+    followButton: string;
+    description: string;
+    noPosts: string;
+    followDescription: string;
+  };
+
   // Reviews Section
   reviews: {
     title: string;
@@ -417,6 +426,13 @@ Wani Modif, Wani Ragat.`,
       copyright: '© {year} Aksesoris Touring Madiun. {credits}',
       creditsATM: 'Dibuat oleh ATM',
     },
+    instagram: {
+      title: 'Ikuti Kami di Instagram',
+      followButton: 'IKUTI KAMI',
+      description: 'Lihat produk terbaru kami, ulasan pelanggan, dan konten di balik layar',
+      noPosts: 'Belum ada postingan',
+      followDescription: 'Ikuti kami di Instagram untuk update terbaru',
+    },
     reviews: {
       title: 'Ulasan Pelanggan',
       subtitle: 'Apa Kata Mereka',
@@ -672,6 +688,13 @@ Wani Modif, Wani Ragat.`,
       newsletterPlaceholder: 'Join Newsletter',
       copyright: '© {year} Aksesoris Touring Madiun. {credits}',
       creditsATM: 'Built by ATM',
+    },
+    instagram: {
+      title: 'Follow Us on Instagram',
+      followButton: 'FOLLOW US',
+      description: 'Check out our latest products, customer reviews, and behind-the-scenes content',
+      noPosts: 'No posts yet',
+      followDescription: 'Follow us on Instagram for updates',
     },
     reviews: {
       title: 'Customer Reviews',

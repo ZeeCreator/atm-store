@@ -15,7 +15,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 function CatalogContent() {
   const searchParams = useSearchParams();
   const { t } = useLanguage();
-  const { products } = useStore();
+  const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -53,10 +53,9 @@ function CatalogContent() {
       if (data) {
         const productsList: Product[] = Object.entries(data)
           .map(([id, product]: [string, any]) => ({ id, ...product }));
-        setFilteredProducts(productsList);
+        setProducts(productsList);
       } else {
-        // No products in database
-        setFilteredProducts([]);
+        setProducts([]);
       }
       setIsLoading(false);
     });
@@ -64,9 +63,20 @@ function CatalogContent() {
     return () => unsubscribe();
   }, []);
 
+  // Auto-select category dari URL param (dari Arsenal)
+  useEffect(() => {
+    const categoryParam = searchParams.get('category');
+    
+    if (categoryParam && categoryParam !== 'all') {
+      const decodedCategory = decodeURIComponent(categoryParam);
+      // Set selected category langsung dengan decoded value
+      setSelectedCategories([decodedCategory]);
+    }
+  }, [searchParams]);
+
   // Filter and sort products
   useEffect(() => {
-    let result = [...(products || [])];
+    let result = [...products];
 
     // Search filter
     if (searchQuery) {
@@ -77,26 +87,13 @@ function CatalogContent() {
       );
     }
 
-    // Category filter - case insensitive
-    if (selectedCategories.length > 0) {
-      const selectedCatsLower = selectedCategories.map(c => c.toLowerCase());
+    // Category filter - case insensitive exact match (dari sidebar ATAU URL param)
+    if (selectedCategories && selectedCategories.length > 0) {
+      const selectedCatsLower = selectedCategories.map(c => c.toLowerCase().trim());
       result = result.filter((p) => {
-        const productCat = (p.category || '').toLowerCase();
-        return selectedCatsLower.includes(productCat);
+        const productCat = (p.category || '').toLowerCase().trim();
+        return selectedCatsLower.some(cat => cat === productCat);
       });
-    }
-
-    // Check URL params
-    const categoryParam = searchParams.get('category');
-    if (categoryParam && categoryParam !== 'all') {
-      const formattedCategory = categoryParam.charAt(0).toUpperCase() + categoryParam.slice(1);
-      const formattedCategoryLower = formattedCategory.toLowerCase();
-      if (!selectedCategories.map(c => c.toLowerCase()).includes(formattedCategoryLower)) {
-        result = result.filter((p) => {
-          const productCat = (p.category || '').toLowerCase();
-          return productCat === formattedCategoryLower;
-        });
-      }
     }
 
     // Price filter
@@ -122,11 +119,18 @@ function CatalogContent() {
   }, [products, searchQuery, selectedCategories, priceRange, sortBy, searchParams]);
 
   const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
-    );
+    setSelectedCategories((prev) => {
+      const categoryLower = category.toLowerCase();
+      const isAlreadySelected = prev.some(c => c.toLowerCase() === categoryLower);
+      
+      if (isAlreadySelected) {
+        // Remove category (case-insensitive)
+        return prev.filter(c => c.toLowerCase() !== categoryLower);
+      } else {
+        // Add category
+        return [...prev, category];
+      }
+    });
   };
 
   const formatPrice = (price: number) => {
@@ -178,7 +182,11 @@ function CatalogContent() {
                 const productCount = products.filter((p) =>
                   (p.category || '').toLowerCase() === category.toLowerCase()
                 ).length;
-                const isSelected = selectedCategories.includes(category);
+                
+                // Case-insensitive check
+                const isSelected = selectedCategories.some(
+                  c => c.toLowerCase() === category.toLowerCase()
+                );
 
                 return (
                   <button
@@ -252,12 +260,17 @@ function CatalogContent() {
                   const productCount = products.filter((p) =>
                     (p.category || '').toLowerCase() === category.toLowerCase()
                   ).length;
+                  
+                  // Case-insensitive check
+                  const isSelected = selectedCategories.some(
+                    c => c.toLowerCase() === category.toLowerCase()
+                  );
 
                   return (
                     <label key={category} className="flex items-center gap-3 cursor-pointer group">
                       <input
                         type="checkbox"
-                        checked={selectedCategories.includes(category)}
+                        checked={isSelected}
                         onChange={() => toggleCategory(category)}
                         className="form-checkbox bg-surface-container-lowest border-outline-variant text-primary rounded-none focus:ring-0 accent-primary w-4 h-4"
                       />

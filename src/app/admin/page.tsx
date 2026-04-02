@@ -28,6 +28,7 @@ import {
   escapeHTML,
 } from '@/lib/security';
 import SEOSettingsPanel from '@/components/SEOSettingsPanel';
+import FlashSaleManager from '@/components/admin/FlashSaleManager';
 
 type Product = {
   id: string;
@@ -176,8 +177,9 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
   });
 
   // Instagram Posts State
-  const [instagramPosts, setInstagramPosts] = useState<string[]>([]);
+  const [instagramPosts, setInstagramPosts] = useState<any[]>([]);
   const [newInstagramPost, setNewInstagramPost] = useState('');
+  const [newInstagramCaption, setNewInstagramCaption] = useState('');
 
   // Chart data states
   const [salesData, setSalesData] = useState({
@@ -697,12 +699,41 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
     }
 
     try {
-      await push(ref(db, 'categories'), newCategory.trim());
+      const categoryName = newCategory.trim();
+      await push(ref(db, 'categories'), categoryName);
+      
+      // Auto-sync to Arsenal dengan default image
+      const defaultImages: Record<string, string> = {
+        'Helmets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDrOPHs5QuRC38lRDmTmY7sKn-kb8EZ8BsGj8Xl5B3bRu8UnoA4e99K4Z-zbYsslzIJYfRXBUWtj3rH3H8HAA35chxCMfJsaQQ59QpYujAsi90TDrEKoRsCsppgQpZJpblVnFBAUi6C7v7T-PDHpyYnaYOQ0d7vn5G0dFeD5RStwk-8EuemUqL9fvlG_cYiwHOst3wsf3QEpqh0iNPTI2a4sw_xuBJZq0XGhTb-i8L4CVVGKYJMaAtXnrQ2Lb916fdhbnhPFtuiSkTY',
+        'Jackets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRvy3mzvo2UQMoY5soIh0ZM5mbjAg_Pq8c3y725s5z2lpmcFzDvArcy_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+        'Touring Boxes': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDvZm2AEgCSr59eO8y8ZmGly7MOBQCZX5wZX0ffQghSfNhcQ1jMvIMQi_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+        'Gloves & Footwear': 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLxvenesZ98H4sbxJAaGB125WR9o_doEeMf-WFVf3Nv8jK3jbbjG0QDHOtwPhJPo0WwqSV75dTCTcH6LYdSLr3VMb5FI8tCSMDNYaIpGyjAdfIaSSjpAHDXy2c7QqvF43pvnU8bMbwzKKbkP36M8GQ1JMxwZSwjd2r3_hQUt5vBQeX5rNdGCKZzPTJh66dINiNOELOeVE8SsoVigCDSYZnxNHtFTwggqoYjGp7ErrK0IEmBheN-prFr9e1tzPd2CeXB4eTbmktIko5',
+      };
+      
+      // Cek apakah arsenal sudah ada data
+      const arsenalRef = ref(db, 'arsenal');
+      const arsenalSnapshot = await get(arsenalRef);
+      const arsenalData = arsenalSnapshot.val();
+      
+      // Jika category belum ada di arsenal, tambahkan
+      const categoryExistsInArsenal = arsenalData && Object.values(arsenalData).some((c: any) => 
+        c.name.toLowerCase() === categoryName.toLowerCase()
+      );
+      
+      if (!categoryExistsInArsenal) {
+        const newArsenalItem = {
+          name: categoryName,
+          image: defaultImages[categoryName] || `https://source.unsplash.com/800x600/?motorcycle,${encodeURIComponent(categoryName.replace(/&/g, ''))}`,
+          span: '',
+        };
+        await push(arsenalRef, newArsenalItem);
+      }
+      
       setNewCategory('');
       showAlert({
         type: 'success',
         title: 'CATEGORY ADDED',
-        message: `Category "${newCategory}" has been added successfully.`,
+        message: `Category "${categoryName}" has been added to Categories and Arsenal.`,
         badgeText: 'ADDED',
         badgeColor: 'bg-green-900/30 text-green-200',
       });
@@ -901,7 +932,8 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
       return;
     }
 
-    if (instagramPosts.includes(newInstagramPost)) {
+    // Check for duplicate URL
+    if (instagramPosts.some(post => post.url === newInstagramPost)) {
       showAlert({
         type: 'warning',
         title: 'DUPLICATE POST',
@@ -912,9 +944,16 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
       return;
     }
 
-    const newPosts = [...instagramPosts, newInstagramPost];
+    const newPost = {
+      url: newInstagramPost,
+      caption: newInstagramCaption,
+      createdAt: Date.now(),
+    };
+    
+    const newPosts = [...instagramPosts, newPost];
     setInstagramPosts(newPosts);
     setNewInstagramPost('');
+    setNewInstagramCaption('');
   };
 
   const handleDeleteInstagramPost = (index: number) => {
@@ -1523,130 +1562,7 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
       {/* Flash Sale Tab */}
       {activeTab === 'flashsale' && (
         <div className="bg-surface-container-low p-8">
-          <h3 className="text-2xl font-headline font-bold uppercase mb-6">
-            <i className="fa-solid fa-bolt text-[#FF4500] mr-2"></i>
-            {t.admin.flashSale}
-          </h3>
-          
-          <div className="space-y-6">
-            <div className="flex items-center justify-between p-4 border border-outline-variant/30 rounded">
-              <div>
-                <h4 className="text-lg font-headline font-bold uppercase text-white mb-1">
-                  {t.admin.activateFlashSale}
-                </h4>
-                <p className="text-xs text-gray-500">Enable flash sale for selected products</p>
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={flashSaleSettings.isActive}
-                  onChange={(e) => setFlashSaleSettings({ ...flashSaleSettings, isActive: e.target.checked })}
-                  className="w-5 h-5 accent-[#FF4500]"
-                />
-                <span className={`text-xs font-headline uppercase tracking-widest ${flashSaleSettings.isActive ? 'text-[#FF4500]' : 'text-gray-500'}`}>
-                  {flashSaleSettings.isActive ? 'ACTIVE' : 'INACTIVE'}
-                </span>
-              </label>
-            </div>
-
-            {flashSaleSettings.isActive && (
-              <>
-                <div>
-                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
-                    {t.admin.title}
-                  </label>
-                  <input
-                    type="text"
-                    value={flashSaleSettings.title}
-                    onChange={(e) => setFlashSaleSettings({ ...flashSaleSettings, title: e.target.value })}
-                    className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-[#FF4500] focus:ring-0 input-brutal"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-4">
-                    {t.admin.countdownTimer}
-                  </label>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-headline uppercase tracking-widest text-gray-500 mb-2">
-                        {t.admin.hours}
-                      </label>
-                      <input
-                        type="number"
-                        value={flashSaleSettings.hours}
-                        onChange={(e) => setFlashSaleSettings({ ...flashSaleSettings, hours: parseInt(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white text-center focus:border-[#FF4500] focus:ring-0 input-brutal"
-                        min="0"
-                        max="99"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-headline uppercase tracking-widest text-gray-500 mb-2">
-                        {t.admin.minutes}
-                      </label>
-                      <input
-                        type="number"
-                        value={flashSaleSettings.minutes}
-                        onChange={(e) => setFlashSaleSettings({ ...flashSaleSettings, minutes: parseInt(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white text-center focus:border-[#FF4500] focus:ring-0 input-brutal"
-                        min="0"
-                        max="59"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-headline uppercase tracking-widest text-gray-500 mb-2">
-                        {t.admin.seconds}
-                      </label>
-                      <input
-                        type="number"
-                        value={flashSaleSettings.seconds}
-                        onChange={(e) => setFlashSaleSettings({ ...flashSaleSettings, seconds: parseInt(e.target.value) || 0 })}
-                        className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white text-center focus:border-[#FF4500] focus:ring-0 input-brutal"
-                        min="0"
-                        max="59"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={async () => {
-                    try {
-                      const endTime = Date.now() + (flashSaleSettings.hours * 3600000 + flashSaleSettings.minutes * 60000 + flashSaleSettings.seconds * 1000);
-                      await update(ref(db, 'flashSale'), {
-                        isActive: flashSaleSettings.isActive,
-                        hours: flashSaleSettings.hours,
-                        minutes: flashSaleSettings.minutes,
-                        seconds: flashSaleSettings.seconds,
-                        title: flashSaleSettings.title,
-                        endTime: endTime,
-                      });
-                      showAlert({
-                        type: 'success',
-                        title: 'FLASH SALE UPDATED',
-                        message: 'Flash sale settings have been saved successfully.',
-                        badgeText: 'UPDATED',
-                        badgeColor: 'bg-green-900/30 text-green-200',
-                      });
-                    } catch (error) {
-                      showAlert({
-                        type: 'error',
-                        title: 'UPDATE FAILED',
-                        message: 'Failed to save flash sale settings.',
-                        badgeText: 'ERROR',
-                        badgeColor: 'bg-error-container text-on-error-container',
-                      });
-                    }
-                  }}
-                  className="bg-gradient-to-br from-primary to-primary-container px-8 py-3 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center gap-2"
-                >
-                  <i className="fa-solid fa-save"></i>
-                  {t.admin.save}
-                </button>
-              </>
-            )}
-          </div>
+          <FlashSaleManager showAlert={showAlert} />
         </div>
       )}
 
@@ -1731,6 +1647,87 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
               </div>
             </div>
 
+            {/* Sync Button */}
+            <div className="flex items-center justify-between p-4 bg-surface-container-highest border border-outline-variant/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
+                  <i className="fa-solid fa-right-left text-primary text-lg"></i>
+                </div>
+                <div>
+                  <h4 className="font-headline font-bold text-white uppercase text-sm">Sync Categories to Arsenal</h4>
+                  <p className="text-xs text-gray-400">Copy all categories to The Arsenal with default images</p>
+                </div>
+              </div>
+              <button
+                onClick={async () => {
+                  if (categories.length === 0) {
+                    showAlert({
+                      type: 'warning',
+                      title: 'TIDAK ADA CATEGORIES',
+                      message: 'Tambahkan categories terlebih dahulu sebelum sync.',
+                      badgeText: 'PERINGATAN',
+                      badgeColor: 'bg-amber-900/30 text-amber-200',
+                    });
+                    return;
+                  }
+                  
+                  try {
+                    const defaultImages: Record<string, string> = {
+                      'Helmets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDrOPHs5QuRC38lRDmTmY7sKn-kb8EZ8BsGj8Xl5B3bRu8UnoA4e99K4Z-zbYsslzIJYfRXBUWtj3rH3H8HAA35chxCMfJsaQQ59QpYujAsi90TDrEKoRsCsppgQpZJpblVnFBAUi6C7v7T-PDHpyYnaYOQ0d7vn5G0dFeD5RStwk-8EuemUqL9fvlG_cYiwHOst3wsf3QEpqh0iNPTI2a4sw_xuBJZq0XGhTb-i8L4CVVGKYJMaAtXnrQ2Lb916fdhbnhPFtuiSkTY',
+                      'Jackets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRvy3mzvo2UQMoY5soIh0ZM5mbjAg_Pq8c3y725s5z2lpmcFzDvArcy_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+                      'Touring Boxes': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDvZm2AEgCSr59eO8y8ZmGly7MOBQCZX5wZX0ffQghSfNhcQ1jMvIMQi_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+                      'Gloves & Footwear': 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLxvenesZ98H4sbxJAaGB125WR9o_doEeMf-WFVf3Nv8jK3jbbjG0QDHOtwPhJPo0WwqSV75dTCTcH6LYdSLr3VMb5FI8tCSMDNYaIpGyjAdfIaSSjpAHDXy2c7QqvF43pvnU8bMbwzKKbkP36M8GQ1JMxwZSwjd2r3_hQUt5vBQeX5rNdGCKZzPTJh66dINiNOELOeVE8SsoVigCDSYZnxNHtFTwggqoYjGp7ErrK0IEmBheN-prFr9e1tzPd2CeXB4eTbmktIko5',
+                    };
+                    const spans = ['md:col-span-2 md:row-span-2', '', '', 'md:col-span-2'];
+                    
+                    // Get existing arsenal categories names (case insensitive)
+                    const arsenalRef = ref(db, 'arsenal');
+                    const snapshot = await get(arsenalRef);
+                    const existingArsenal = snapshot.val();
+                    const existingNames = existingArsenal 
+                      ? Object.values(existingArsenal).map((c: any) => c.name.toLowerCase())
+                      : [];
+                    
+                    // Sync only categories that don't exist in arsenal yet
+                    const newArsenalData = categories
+                      .filter(cat => !existingNames.includes(cat.toLowerCase()))
+                      .map((cat, index) => ({
+                        name: cat,
+                        image: defaultImages[cat] || `https://source.unsplash.com/800x600/?motorcycle,${cat.toLowerCase().replace(/&/g, '')}`,
+                        span: spans[index % spans.length] || '',
+                      }));
+                    
+                    // Add new categories to existing arsenal
+                    if (newArsenalData.length > 0) {
+                      for (const item of newArsenalData) {
+                        await push(arsenalRef, item);
+                      }
+                    }
+                    
+                    showAlert({
+                      type: 'success',
+                      title: 'SYNC BERHASIL',
+                      message: `${newArsenalData.length || categories.length} categories berhasil disync ke The Arsenal.`,
+                      badgeText: 'BERHASIL',
+                      badgeColor: 'bg-green-900/30 text-green-200',
+                    });
+                  } catch (error) {
+                    showAlert({
+                      type: 'error',
+                      title: 'SYNC GAGAL',
+                      message: 'Terjadi kesalahan saat sync categories.',
+                      badgeText: 'ERROR',
+                      badgeColor: 'bg-error-container text-on-error-container',
+                    });
+                  }
+                }}
+                className="bg-gradient-to-br from-primary to-primary-container px-6 py-3 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center gap-2 hover:from-primary-container hover:to-primary transition-all"
+              >
+                <i className="fa-solid fa-bolt"></i>
+                Sync Now
+              </button>
+            </div>
+
             {/* Add/Edit Form */}
             <div className="bg-surface-container-highest border border-outline-variant/30 rounded-lg overflow-hidden">
               <div className="bg-gradient-to-r from-primary to-primary-container p-4">
@@ -1745,11 +1742,50 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                     <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
                       {t.admin.arsenalName}
                     </label>
+                    {/* Dropdown Categories */}
+                    <div className="relative mb-3">
+                      <select
+                        value=""
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            const selectedCat = categories.find(c => c === e.target.value);
+                            if (selectedCat) {
+                              const defaultImages: Record<string, string> = {
+                                'Helmets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDrOPHs5QuRC38lRDmTmY7sKn-kb8EZ8BsGj8Xl5B3bRu8UnoA4e99K4Z-zbYsslzIJYfRXBUWtj3rH3H8HAA35chxCMfJsaQQ59QpYujAsi90TDrEKoRsCsppgQpZJpblVnFBAUi6C7v7T-PDHpyYnaYOQ0d7vn5G0dFeD5RStwk-8EuemUqL9fvlG_cYiwHOst3wsf3QEpqh0iNPTI2a4sw_xuBJZq0XGhTb-i8L4CVVGKYJMaAtXnrQ2Lb916fdhbnhPFtuiSkTY',
+                                'Jackets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRvy3mzvo2UQMoY5soIh0ZM5mbjAg_Pq8c3y725s5z2lpmcFzDvArcy_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+                                'Touring Boxes': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDvZm2AEgCSr59eO8y8ZmGly7MOBQCZX5wZX0ffQghSfNhcQ1jMvIMQi_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+                                'Gloves & Footwear': 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLxvenesZ98H4sbxJAaGB125WR9o_doEeMf-WFVf3Nv8jK3jbbjG0QDHOtwPhJPo0WwqSV75dTCTcH6LYdSLr3VMb5FI8tCSMDNYaIpGyjAdfIaSSjpAHDXy2c7QqvF43pvnU8bMbwzKKbkP36M8GQ1JMxwZSwjd2r3_hQUt5vBQeX5rNdGCKZzPTJh66dINiNOELOeVE8SsoVigCDSYZnxNHtFTwggqoYjGp7ErrK0IEmBheN-prFr9e1tzPd2CeXB4eTbmktIko5',
+                              };
+                              setArsenalForm({ 
+                                ...arsenalForm, 
+                                name: selectedCat,
+                                image: defaultImages[selectedCat] || arsenalForm.image,
+                              });
+                            }
+                          }
+                        }}
+                        className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-[#FF4500] focus:ring-0 input-brutal transition-all appearance-none cursor-pointer"
+                      >
+                        <option value="">-- Pilih dari Categories (Opsional) --</option>
+                        {categories.map((cat, index) => (
+                          <option key={index} value={cat}>{cat}</option>
+                        ))}
+                      </select>
+                      <i className="fa-solid fa-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    </div>
+                    {/* Info Box */}
+                    <div className="bg-primary/10 border border-primary/20 rounded p-3 mb-3">
+                      <p className="text-xs text-gray-400 flex items-start gap-2">
+                        <i className="fa-solid fa-circle-info text-primary mt-0.5"></i>
+                        <span>Pilih dari dropdown untuk menggunakan default image, atau ketik manual nama category yang berbeda.</span>
+                      </p>
+                    </div>
+                    {/* Manual Input */}
                     <input
                       type="text"
                       value={arsenalForm.name}
                       onChange={(e) => setArsenalForm({ ...arsenalForm, name: e.target.value })}
-                      placeholder="e.g., Helmets, Jackets"
+                      placeholder="Nama Category Arsenal..."
                       className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-[#FF4500] focus:ring-0 input-brutal transition-all"
                     />
                   </div>
@@ -1908,61 +1944,115 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
             <i className="fa-brands fa-instagram text-[#FF4500] mr-2"></i>
             {t.admin.instagramPosts}
           </h3>
-          
+
           <div className="space-y-6">
             <p className="text-xs text-gray-500 font-headline uppercase tracking-widest">
               {t.admin.instagramDescription}
             </p>
 
-            <div className="flex gap-4">
-              <input
-                type="text"
-                value={newInstagramPost}
-                onChange={(e) => setNewInstagramPost(e.target.value)}
-                placeholder={t.admin.postUrl}
-                className="flex-1 bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-[#FF4500] focus:ring-0 input-brutal"
-              />
-              <button
-                onClick={handleAddInstagramPost}
-                className="bg-gradient-to-br from-primary to-primary-container px-6 py-3 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center gap-2"
-              >
-                <i className="fa-solid fa-plus"></i>
-                {t.admin.addPost}
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {instagramPosts.map((post, index) => (
-                <div key={index} className="bg-surface-container-highest border border-outline-variant/30 rounded p-4 flex items-center justify-between">
-                  <a
-                    href={post}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-container hover:text-primary text-sm truncate flex-1 mr-4"
-                  >
-                    <i className="fa-brands fa-instagram mr-2"></i>
-                    {post}
-                  </a>
-                  <button
-                    onClick={() => handleDeleteInstagramPost(index)}
-                    className="text-red-500 hover:text-red-400 p-2"
-                  >
-                    <i className="fa-solid fa-trash"></i>
-                  </button>
+            {/* Add Post Form */}
+            <div className="bg-surface-container-highest border border-outline-variant/30 rounded-lg p-4 md:p-6">
+              <h4 className="font-headline font-bold text-white uppercase mb-4 flex items-center gap-2 text-sm md:text-base">
+                <i className="fa-solid fa-plus-circle text-[#FF4500]"></i>
+                Add New Instagram Post
+              </h4>
+              <div className="space-y-3 md:space-y-4">
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                    Instagram URL *
+                  </label>
+                  <input
+                    type="text"
+                    value={newInstagramPost}
+                    onChange={(e) => setNewInstagramPost(e.target.value)}
+                    placeholder="https://www.instagram.com/p/ABC123/"
+                    className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base text-white focus:border-[#FF4500] focus:ring-0 input-brutal"
+                  />
                 </div>
-              ))}
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                    Caption (Optional)
+                  </label>
+                  <textarea
+                    value={newInstagramCaption}
+                    onChange={(e) => setNewInstagramCaption(e.target.value)}
+                    placeholder="Add a caption for this post..."
+                    rows={3}
+                    className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-3 md:px-4 py-2.5 md:py-3 text-sm md:text-base text-white focus:border-[#FF4500] focus:ring-0 input-brutal resize-none"
+                  />
+                </div>
+                <button
+                  onClick={handleAddInstagramPost}
+                  className="w-full bg-gradient-to-br from-primary to-primary-container px-4 md:px-6 py-2.5 md:py-3 text-xs md:text-sm font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center justify-center gap-2"
+                >
+                  <i className="fa-solid fa-plus"></i>
+                  {t.admin.addPost}
+                </button>
+              </div>
             </div>
 
-            {instagramPosts.length === 0 && (
-              <div className="text-center py-20">
-                <i className="fa-brands fa-instagram text-6xl text-white/40 mb-4"></i>
-                <p className="text-white/40">No Instagram posts yet</p>
-              </div>
-            )}
+            {/* Posts Grid */}
+            <div>
+              <h4 className="font-headline font-bold text-white uppercase mb-4 flex items-center gap-2">
+                <i className="fa-brands fa-instagram text-[#FF4500]"></i>
+                Instagram Posts ({instagramPosts.length})
+              </h4>
+              
+              {instagramPosts.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  {instagramPosts.map((post, index) => (
+                    <div key={index} className="bg-surface-container-highest border border-outline-variant/30 rounded-lg overflow-hidden group">
+                      {/* Preview */}
+                      <div className="aspect-square bg-surface-container-lowest flex items-center justify-center relative">
+                        <i className="fa-brands fa-instagram text-4xl text-primary opacity-50"></i>
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                          <a
+                            href={post.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-on-primary hover:bg-primary-container transition-colors"
+                            title="View on Instagram"
+                          >
+                            <i className="fa-solid fa-external-link-alt text-sm"></i>
+                          </a>
+                          <button
+                            onClick={() => handleDeleteInstagramPost(index)}
+                            className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white hover:bg-red-600 transition-colors"
+                            title="Delete"
+                          >
+                            <i className="fa-solid fa-trash text-sm"></i>
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Info */}
+                      <div className="p-4">
+                        <p className="text-xs text-gray-500 mb-2 truncate">
+                          {post.url}
+                        </p>
+                        {post.caption && (
+                          <p className="text-white/80 text-sm line-clamp-2">
+                            {post.caption}
+                          </p>
+                        )}
+                        <p className="text-[10px] text-gray-600 mt-2">
+                          {new Date(post.createdAt).toLocaleDateString('id-ID')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-20">
+                  <i className="fa-brands fa-instagram text-6xl text-white/40 mb-4"></i>
+                  <p className="text-white/40">No Instagram posts yet</p>
+                </div>
+              )}
+            </div>
 
             <button
               onClick={handleSaveInstagram}
-              className="bg-gradient-to-br from-primary to-primary-container px-8 py-3 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center gap-2 w-full md:w-auto"
+              className="w-full md:w-auto bg-gradient-to-br from-primary to-primary-container px-6 md:px-8 py-2.5 md:py-3 text-xs md:text-sm font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center justify-center gap-2"
             >
               <i className="fa-solid fa-save"></i>
               {t.admin.savePosts}

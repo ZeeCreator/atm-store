@@ -15,48 +15,86 @@ interface ArsenalCategory {
   span?: string;
 }
 
+// Default images untuk categories jika tidak ada di arsenal
+const DEFAULT_CATEGORY_IMAGES: Record<string, string> = {
+  'Helmets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDrOPHs5QuRC38lRDmTmY7sKn-kb8EZ8BsGj8Xl5B3bRu8UnoA4e99K4Z-zbYsslzIJYfRXBUWtj3rH3H8HAA35chxCMfJsaQQ59QpYujAsi90TDrEKoRsCsppgQpZJpblVnFBAUi6C7v7T-PDHpyYnaYOQ0d7vn5G0dFeD5RStwk-8EuemUqL9fvlG_cYiwHOst3wsf3QEpqh0iNPTI2a4sw_xuBJZq0XGhTb-i8L4CVVGKYJMaAtXnrQ2Lb916fdhbnhPFtuiSkTY',
+  'Jackets': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRvy3mzvo2UQMoY5soIh0ZM5mbjAg_Pq8c3y725s5z2lpmcFzDvArcy_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+  'Touring Boxes': 'https://lh3.googleusercontent.com/aida-public/AB6AXuDvZm2AEgCSr59eO8y8ZmGly7MOBQCZX5wZX0ffQghSfNhcQ1jMvIMQi_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
+  'Gloves & Footwear': 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLxvenesZ98H4sbxJAaGB125WR9o_doEeMf-WFVf3Nv8jK3jbbjG0QDHOtwPhJPo0WwqSV75dTCTcH6LYdSLr3VMb5FI8tCSMDNYaIpGyjAdfIaSSjpAHDXy2c7QqvF43pvnU8bMbwzKKbkP36M8GQ1JMxwZSwjd2r3_hQUt5vBQeX5rNdGCKZzPTJh66dINiNOELOeVE8SsoVigCDSYZnxNHtFTwggqoYjGp7ErrK0IEmBheN-prFr9e1tzPd2CeXB4eTbmktIko5',
+};
+
+// Default spans untuk layout
+const DEFAULT_SPANS = ['md:col-span-2 md:row-span-2', '', '', 'md:col-span-2'];
+
 export default function CategoriesSection() {
   const { t } = useLanguage();
   const [categories, setCategories] = useState<ArsenalCategory[]>([]);
   const sectionRef = useScrollAnimation();
 
   useEffect(() => {
-    // Fetch arsenal categories from Firebase
+    // Fetch dari arsenal terlebih dahulu (prioritas)
     const arsenalRef = ref(db, 'arsenal');
-    const unsubscribe = onValue(arsenalRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        const arsenalList: ArsenalCategory[] = Object.values(data);
+    const categoriesRef = ref(db, 'categories');
+    
+    const unsubscribeArsenal = onValue(arsenalRef, (arsenalSnapshot) => {
+      const arsenalData = arsenalSnapshot.val();
+      
+      // Jika ada data di arsenal, gunakan itu
+      if (arsenalData) {
+        const arsenalList: ArsenalCategory[] = Object.values(arsenalData);
         setCategories(arsenalList);
-      } else {
-        // Default categories
-        setCategories([
-          {
-            name: 'Helmets',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDrOPHs5QuRC38lRDmTmY7sKn-kb8EZ8BsGj8Xl5B3bRu8UnoA4e99K4Z-zbYsslzIJYfRXBUWtj3rH3H8HAA35chxCMfJsaQQ59QpYujAsi90TDrEKoRsCsppgQpZJpblVnFBAUi6C7v7T-PDHpyYnaYOQ0d7vn5G0dFeD5RStwk-8EuemUqL9fvlG_cYiwHOst3wsf3QEpqh0iNPTI2a4sw_xuBJZq0XGhTb-i8L4CVVGKYJMaAtXnrQ2Lb916fdhbnhPFtuiSkTY',
-            span: 'md:col-span-2 md:row-span-2',
-          },
-          {
-            name: 'Jackets',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDRvy3mzvo2UQMoY5soIh0ZM5mbjAg_Pq8c3y725s5z2lpmcFzDvArcy_aeSwpo41D7EN2ak7_c6InB_SrEst01NSS5qMHcbFSHszRcfExmhDShcapaJlQmM7fVb3LAK28enlmgCxqjoUIKmLNbB04qCVm2launfsL1E7AhbabU-AWjRAeO5hb1fzYAmcKpNWBFOsSMucKinULWW1wp8jt1bC3LrZXo6Bj6w5XNWCNzX9NZVUi_SPibGfNNYWwSe3_jwDM3gAI6Netu',
-            span: '',
-          },
-          {
-            name: 'Touring Boxes',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDvZm2AEgCSr59eO8y8ZmGly7MOBQCZX5wZX0ffQghSfNhcQ1jMvIMQi_ick0eBYgNYuiakkM2t1-UcONQyrO6aEU8pJKtgbkS-1Z6yr5d9afzhkJxmYn44Q8zXLxwPeFPNurX25iTX9xGwYzYLmkLuSKj9YqJEpPTNo6yEfHxsZv8Wg1FjiQwOlLr7Gak0_4vaRBOz2vLUxcxTvc6-SxtjcVa4xEvwKdckHESegPkXn8sI-LOcvyyuIgov3RjRpgEhWABfDJ28-nkx',
-            span: '',
-          },
-          {
-            name: 'Gloves & Footwear',
-            image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCLxvenesZ98H4sbxJAaGB125WR9o_doEeMf-WFVf3Nv8jK3jbbjG0QDHOtwPhJPo0WwqSV75dTCTcH6LYdSLr3VMb5FI8tCSMDNYaIpGyjAdfIaSSjpAHDXy2c7QqvF43pvnU8bMbwzKKbkP36M8GQ1JMxwZSwjd2r3_hQUt5vBQeX5rNdGCKZzPTJh66dINiNOELOeVE8SsoVigCDSYZnxNHtFTwggqoYjGp7ErrK0IEmBheN-prFr9e1tzPd2CeXB4eTbmktIko5',
-            span: 'md:col-span-2',
-          },
-        ]);
+        return;
       }
+      
+      // Jika tidak ada arsenal, coba dari categories
+      const unsubscribeCategories = onValue(categoriesRef, (catSnapshot) => {
+        const catData = catSnapshot.val();
+        
+        if (catData) {
+          // Convert categories ke format arsenal dengan default images
+          const categoriesList: ArsenalCategory[] = Object.values(catData).map((cat: unknown, index: number) => {
+            const categoryName = cat as string;
+            return {
+              name: categoryName,
+              image: DEFAULT_CATEGORY_IMAGES[categoryName] || `https://source.unsplash.com/800x600/?motorcycle,${categoryName.toLowerCase().replace(/&/g, '')}`,
+              span: DEFAULT_SPANS[index % DEFAULT_SPANS.length] || '',
+            };
+          });
+          
+          setCategories(categoriesList);
+        } else {
+          // Fallback ke default categories
+          setCategories([
+            {
+              name: 'Helmets',
+              image: DEFAULT_CATEGORY_IMAGES['Helmets'],
+              span: 'md:col-span-2 md:row-span-2',
+            },
+            {
+              name: 'Jackets',
+              image: DEFAULT_CATEGORY_IMAGES['Jackets'],
+              span: '',
+            },
+            {
+              name: 'Touring Boxes',
+              image: DEFAULT_CATEGORY_IMAGES['Touring Boxes'],
+              span: '',
+            },
+            {
+              name: 'Gloves & Footwear',
+              image: DEFAULT_CATEGORY_IMAGES['Gloves & Footwear'],
+              span: 'md:col-span-2',
+            },
+          ]);
+        }
+      });
+      
+      return () => unsubscribeCategories();
     });
 
-    return () => unsubscribe();
+    return () => unsubscribeArsenal();
   }, []);
+
   return (
     <section ref={sectionRef} className="py-24 px-8 bg-surface">
       <div className="max-w-7xl mx-auto">
@@ -90,7 +128,7 @@ export default function CategoriesSection() {
                   {category.name}
                 </h3>
                 <Link
-                  href={`/products?category=${category.name.toLowerCase()}`}
+                  href={`/products?category=${encodeURIComponent(category.name)}`}
                   className="flex items-center space-x-2 text-primary-container font-headline uppercase tracking-widest text-sm hover:translate-x-2 transition-transform duration-300 group-hover:animate-pulse"
                 >
                   <span>{t.categories.browseRange}</span>
