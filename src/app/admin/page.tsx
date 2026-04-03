@@ -887,7 +887,7 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
     const newArsenal = arsenalCategories.filter((_, i) => i !== index);
     setArsenalCategories(newArsenal);
     if (editingArsenalIndex === index) {
-      setArsenalForm({ name: '', image: '', span: 'md:col-span-1' });
+      setArsenalForm({ name: '', image: '', span: 'md:col-span-1', cardSize: 'medium' });
       setEditingArsenalIndex(null);
     }
   };

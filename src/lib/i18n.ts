@@ -41,6 +41,8 @@ export interface Translation {
   categories: {
     browseRange: string;
     shopByCategory: string;
+    readMore: string;
+    showLess: string;
   };
 
   // Cart
