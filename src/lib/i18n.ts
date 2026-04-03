@@ -316,6 +316,8 @@ export const translations: Record<Language, Translation> = {
     categories: {
       browseRange: 'Jelajahi',
       shopByCategory: 'Belanja berdasarkan kategori',
+      readMore: 'Lihat Semua',
+      showLess: 'Tampilkan Lebih Sedikit',
     },
     cart: {
       title: 'Keranjang Belanja',
@@ -579,6 +581,8 @@ Wani Modif, Wani Ragat.`,
     categories: {
       browseRange: 'Browse Range',
       shopByCategory: 'Shop by category',
+      readMore: 'View All',
+      showLess: 'Show Less',
     },
     cart: {
       title: 'Shopping Cart',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -62,10 +62,27 @@ export default function AdminPage() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newCategory, setNewCategory] = useState('');
-  const [arsenalForm, setArsenalForm] = useState({ name: '', image: '', span: 'md:col-span-1' });
+  const [arsenalForm, setArsenalForm] = useState({ name: '', image: '', span: 'md:col-span-1', cardSize: 'medium' as 'small' | 'medium' | 'large' | 'full' });
   const [editingArsenalIndex, setEditingArsenalIndex] = useState<number | null>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [showArsenalImageUploader, setShowArsenalImageUploader] = useState(false);
+  const [activeArsenalSubTab, setActiveArsenalSubTab] = useState<'categories' | 'layout'>('categories');
+  const [arsenalLayoutSettings, setArsenalLayoutSettings] = useState({
+    mobileGap: 12,
+    desktopGap: 16,
+    layoutStyle: 'classic',
+    borderRadius: 'rounded-none',
+    overlayOpacity: 60,
+    textSize: 'normal',
+    autoArrange: false,
+  });
+  const [isResizing, setIsResizing] = useState<{
+    isResizing: boolean;
+    mode: 'width' | 'height' | null;
+    startX: number;
+    startY: number;
+    startValue: number;
+  }>({ isResizing: false, mode: null, startX: 0, startY: 0, startValue: 0 });
 
   // Alert Popup State
   const [alertPopup, setAlertPopup] = useState({
@@ -302,6 +319,23 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
         }
       });
 
+      // Fetch arsenal layout settings
+      const arsenalLayoutRef = ref(db, 'arsenalLayout');
+      const unsubscribeArsenalLayout = onValue(arsenalLayoutRef, (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          setArsenalLayoutSettings({
+            mobileGap: data.mobileGap ?? 12,
+            desktopGap: data.desktopGap ?? 16,
+            layoutStyle: data.layoutStyle ?? 'classic',
+            borderRadius: data.borderRadius ?? 'rounded-none',
+            overlayOpacity: data.overlayOpacity ?? 60,
+            textSize: data.textSize ?? 'normal',
+            autoArrange: data.autoArrange ?? false,
+          });
+        }
+      });
+
       // Fetch flash sale settings
       const flashSaleRef = ref(db, 'flashSale');
       const unsubscribeFlashSale = onValue(flashSaleRef, (snapshot) => {
@@ -340,6 +374,7 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
         unsubscribeSettings();
         unsubscribeCategories();
         unsubscribeArsenal();
+        unsubscribeArsenalLayout();
         unsubscribeFlashSale();
         unsubscribeInstagram();
       };
@@ -714,16 +749,16 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
       const arsenalRef = ref(db, 'arsenal');
       const arsenalSnapshot = await get(arsenalRef);
       const arsenalData = arsenalSnapshot.val();
-      
+
       // Jika category belum ada di arsenal, tambahkan
-      const categoryExistsInArsenal = arsenalData && Object.values(arsenalData).some((c: any) => 
+      const categoryExistsInArsenal = arsenalData && Object.values(arsenalData).some((c: any) =>
         c.name.toLowerCase() === categoryName.toLowerCase()
       );
-      
+
       if (!categoryExistsInArsenal) {
         const newArsenalItem = {
           name: categoryName,
-          image: defaultImages[categoryName] || `https://source.unsplash.com/800x600/?motorcycle,${encodeURIComponent(categoryName.replace(/&/g, ''))}`,
+          image: defaultImages[categoryName] || '', // Gunakan default atau kosong (tidak pakai random)
           span: '',
         };
         await push(arsenalRef, newArsenalItem);
@@ -814,9 +849,9 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
       return;
     }
 
-    const newArsenal = [...arsenalCategories, arsenalForm];
+    const newArsenal = [...arsenalCategories, { ...arsenalForm }];
     setArsenalCategories(newArsenal);
-    setArsenalForm({ name: '', image: '', span: 'md:col-span-1' });
+    setArsenalForm({ name: '', image: '', span: 'md:col-span-1', cardSize: 'medium' });
   };
 
   const handleEditArsenalCategory = (index: number) => {
@@ -839,9 +874,9 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
 
     const newArsenal = [...arsenalCategories];
     if (editingArsenalIndex !== null) {
-      newArsenal[editingArsenalIndex] = arsenalForm;
+      newArsenal[editingArsenalIndex] = { ...arsenalForm };
       setArsenalCategories(newArsenal);
-      setArsenalForm({ name: '', image: '', span: 'md:col-span-1' });
+      setArsenalForm({ name: '', image: '', span: 'md:col-span-1', cardSize: 'medium' });
       setEditingArsenalIndex(null);
     }
   };
@@ -858,8 +893,84 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
   };
 
   const handleCancelArsenal = () => {
-    setArsenalForm({ name: '', image: '', span: 'md:col-span-1' });
+    setArsenalForm({ name: '', image: '', span: 'md:col-span-1', cardSize: 'medium' });
     setEditingArsenalIndex(null);
+  };
+
+  // Auto-arrange function - Layout Bento seperti screenshot
+  const handleAutoArrangeArsenal = (pattern: 'classic' | 'bento' | 'uniform' | 'mixed' = 'classic') => {
+    if (arsenalCategories.length === 0) {
+      showAlert({
+        type: 'warning',
+        title: 'NO CATEGORIES',
+        message: 'Tambahkan kategori terlebih dahulu sebelum auto-arrange.',
+        badgeText: 'WARNING',
+        badgeColor: 'bg-amber-900/30 text-amber-200',
+      });
+      return;
+    }
+
+    const total = arsenalCategories.length;
+    const newArsenal = arsenalCategories.map((cat: any, index: number) => {
+      let cardSize: 'small' | 'medium' | 'large' | 'full' = 'medium';
+
+      if (pattern === 'classic') {
+        // Pattern screenshot: 1 besar kiri, 2 kecil kanan atas, 1 lebar kanan bawah
+        if (total === 1) {
+          cardSize = 'full';
+        } else if (total === 2) {
+          cardSize = index === 0 ? 'large' : 'large';
+        } else if (total === 3) {
+          if (index === 0) cardSize = 'large';
+          else cardSize = 'small';
+        } else if (total >= 4) {
+          if (index === 0) cardSize = 'large';
+          else if (index === 1 || index === 2) cardSize = 'small';
+          else if (index === 3) cardSize = 'medium';
+          else cardSize = 'medium';
+        }
+      } else if (pattern === 'bento') {
+        // Pattern bento: variasi lain
+        if (total === 1) {
+          cardSize = 'full';
+        } else if (total === 2) {
+          cardSize = index === 0 ? 'large' : 'medium';
+        } else if (total === 3) {
+          if (index === 0) cardSize = 'large';
+          else cardSize = 'small';
+        } else if (total === 4) {
+          if (index === 0) cardSize = 'large';
+          else if (index === 1 || index === 2) cardSize = 'small';
+          else cardSize = 'medium';
+        } else {
+          if (index === 0) cardSize = 'large';
+          else if (index < total - 1 && index % 3 !== 0) cardSize = 'small';
+          else cardSize = 'medium';
+        }
+      } else if (pattern === 'uniform') {
+        // Semua ukuran sama
+        cardSize = 'medium';
+      } else if (pattern === 'mixed') {
+        // Campuran acak
+        const sizes: Array<'small' | 'medium' | 'large' | 'full'> = ['small', 'medium', 'large'];
+        if (index === 0) cardSize = 'large';
+        else if (index === total - 1) cardSize = 'medium';
+        else cardSize = sizes[index % 3];
+      }
+
+      return { ...cat, cardSize };
+    });
+
+    setArsenalCategories(newArsenal);
+    setArsenalLayoutSettings(prev => ({ ...prev, autoArrange: true }));
+
+    showAlert({
+      type: 'success',
+      title: 'AUTO-ARRANGE',
+      message: `Layout "${pattern}" diterapkan pada ${total} kategori.`,
+      badgeText: 'ARRANGED',
+      badgeColor: 'bg-blue-900/30 text-blue-200',
+    });
   };
 
   const handleSaveArsenal = async () => {
@@ -882,6 +993,102 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
       });
     }
   };
+
+  // Arsenal Layout Settings Functions
+  const handleSaveArsenalLayout = async () => {
+    try {
+      await set(ref(db, 'arsenalLayout'), arsenalLayoutSettings);
+      showAlert({
+        type: 'success',
+        title: 'LAYOUT SAVED',
+        message: 'Arsenal layout settings have been saved successfully.',
+        badgeText: 'SAVED',
+        badgeColor: 'bg-green-900/30 text-green-200',
+      });
+    } catch (error) {
+      showAlert({
+        type: 'error',
+        title: 'SAVE FAILED',
+        message: 'Failed to save arsenal layout settings.',
+        badgeText: 'ERROR',
+        badgeColor: 'bg-error-container text-on-error-container',
+      });
+    }
+  };
+
+  const handleResetArsenalLayout = () => {
+    setArsenalLayoutSettings({
+      mobileGap: 12,
+      desktopGap: 16,
+      layoutStyle: 'classic',
+      borderRadius: 'rounded-none',
+      overlayOpacity: 60,
+      textSize: 'normal',
+      autoArrange: false,
+    });
+    showAlert({
+      type: 'info',
+      title: 'LAYOUT RESET',
+      message: 'Layout settings telah direset ke default. Klik Save untuk menerapkan.',
+      badgeText: 'RESET',
+      badgeColor: 'bg-blue-900/30 text-blue-200',
+    });
+  };
+
+  // Resize Handlers - Simplified for Bento Layout
+  const handleResizeStart = (mode: 'width' | 'height', e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    
+    setIsResizing({
+      isResizing: true,
+      mode,
+      startX: clientX,
+      startY: clientY,
+      startValue: mode === 'width' ? arsenalLayoutSettings.desktopGap : arsenalLayoutSettings.overlayOpacity,
+    });
+  };
+
+  useEffect(() => {
+    if (!isResizing.isResizing) return;
+
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+
+      if (isResizing.mode === 'width') {
+        const deltaX = clientX - isResizing.startX;
+        const deltaGap = Math.round(deltaX / 10); // Setiap 10px = 4px gap
+        const newGap = Math.max(4, Math.min(32, isResizing.startValue + deltaGap * 4));
+        if (newGap !== arsenalLayoutSettings.desktopGap) {
+          setArsenalLayoutSettings(prev => ({ ...prev, desktopGap: newGap, mobileGap: Math.max(4, newGap / 2) }));
+        }
+      } else if (isResizing.mode === 'height') {
+        const deltaY = clientY - isResizing.startY;
+        const newOpacity = Math.max(0, Math.min(100, isResizing.startValue - deltaY / 3));
+        if (newOpacity !== arsenalLayoutSettings.overlayOpacity) {
+          setArsenalLayoutSettings(prev => ({ ...prev, overlayOpacity: Math.round(newOpacity) }));
+        }
+      }
+    };
+
+    const handleEnd = () => {
+      setIsResizing({ isResizing: false, mode: null, startX: 0, startY: 0, startValue: 0 });
+    };
+
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchmove', handleMove);
+    window.addEventListener('touchend', handleEnd);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleEnd);
+      window.removeEventListener('touchmove', handleMove);
+      window.removeEventListener('touchend', handleEnd);
+    };
+  }, [isResizing]);
 
   // Instagram Functions
   const handleAddInstagramPost = () => {
@@ -1630,8 +1837,37 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
               {arsenalCategories.length} Categories
             </span>
           </div>
-          
+
+          {/* Arsenal Sub-Tabs */}
+          <div className="flex gap-2 mb-8 border-b border-outline-variant/30">
+            <button
+              onClick={() => setActiveArsenalSubTab('categories')}
+              className={`px-6 py-3 font-headline font-bold uppercase tracking-widest text-sm transition-all border-b-2 ${
+                activeArsenalSubTab === 'categories'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-layer-group mr-2"></i>
+              Categories
+            </button>
+            <button
+              onClick={() => setActiveArsenalSubTab('layout')}
+              className={`px-6 py-3 font-headline font-bold uppercase tracking-widest text-sm transition-all border-b-2 ${
+                activeArsenalSubTab === 'layout'
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-gray-500 hover:text-white'
+              }`}
+            >
+              <i className="fa-solid fa-sliders mr-2"></i>
+              Layout Settings
+            </button>
+          </div>
+
           <div className="space-y-8">
+            {/* Categories Sub-Tab Content */}
+            {activeArsenalSubTab === 'categories' && (
+            <>
             {/* Info Banner */}
             <div className="bg-gradient-to-br from-primary/10 to-primary-container/10 border border-primary/20 rounded p-6">
               <div className="flex items-start gap-4">
@@ -1693,7 +1929,7 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                       .filter(cat => !existingNames.includes(cat.toLowerCase()))
                       .map((cat, index) => ({
                         name: cat,
-                        image: defaultImages[cat] || `https://source.unsplash.com/800x600/?motorcycle,${cat.toLowerCase().replace(/&/g, '')}`,
+                        image: defaultImages[cat] || '', // Gunakan default atau kosong (tidak pakai random)
                         span: spans[index % spans.length] || '',
                       }));
                     
@@ -1802,6 +2038,38 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                     </div>
                   </div>
                 </div>
+                
+                {/* Card Size Selector */}
+                <div className="mt-6">
+                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-3">
+                    <i className="fa-solid fa-expand mr-1"></i>
+                    Card Size (Ukuran Card)
+                  </label>
+                  <div className="grid grid-cols-4 gap-3">
+                    {[
+                      { value: 'small', label: 'Small', icon: 'fa-square-sm', desc: 'Kecil' },
+                      { value: 'medium', label: 'Medium', icon: 'fa-square', desc: 'Sedang' },
+                      { value: 'large', label: 'Large', icon: 'fa-square-lg', desc: 'Besar' },
+                      { value: 'full', label: 'Full', icon: 'fa-rectangle-wide', desc: 'Penuh' },
+                    ].map((size) => (
+                      <button
+                        key={size.value}
+                        type="button"
+                        onClick={() => setArsenalForm({ ...arsenalForm, cardSize: size.value as 'small' | 'medium' | 'large' | 'full' })}
+                        className={`p-3 border-2 rounded-lg transition-all duration-200 ${
+                          arsenalForm.cardSize === size.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-outline-variant/30 bg-surface-container-low text-gray-400 hover:border-primary/50'
+                        }`}
+                      >
+                        <i className={`fa-solid ${size.icon} text-2xl mb-2`}></i>
+                        <div className="text-xs font-bold uppercase">{size.label}</div>
+                        <div className="text-[10px] opacity-60">{size.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex flex-col sm:flex-row gap-3 mt-6 pt-6 border-t border-outline-variant/30">
                   {editingArsenalIndex !== null ? (
                     <>
@@ -1840,10 +2108,32 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                   <i className="fa-solid fa-layer-group text-[#FF4500]"></i>
                   Categories Grid
                 </h4>
-                <span className="text-xs text-gray-500 font-headline uppercase tracking-widest">
-                  <i className="fa-solid fa-arrows-up-down-left mr-1"></i>
-                  Drag to reorder
-                </span>
+                <div className="flex items-center gap-2">
+                  {/* Auto Arrange Dropdown */}
+                  <div className="relative">
+                    <select
+                      onChange={(e) => {
+                        if (e.target.value) {
+                          handleAutoArrangeArsenal(e.target.value as 'classic' | 'bento' | 'uniform' | 'mixed');
+                          e.target.value = '';
+                        }
+                      }}
+                      className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-2 pr-8 text-xs font-headline font-bold uppercase tracking-wider text-white rounded-md flex items-center gap-2 hover:from-blue-600 hover:to-blue-700 transition-all appearance-none cursor-pointer"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>✨ Auto Arrange</option>
+                      <option value="classic">🎯 Classic (Screenshot)</option>
+                      <option value="bento"> Bento (Variasi)</option>
+                      <option value="uniform">⬜ Uniform (Seragam)</option>
+                      <option value="mixed">🎲 Mixed (Campuran)</option>
+                    </select>
+                    <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none text-xs"></i>
+                  </div>
+                  <span className="text-xs text-gray-500 font-headline uppercase tracking-widest flex items-center">
+                    <i className="fa-solid fa-arrows-up-down-left mr-1"></i>
+                    <span className="hidden sm:inline">Drag to reorder</span>
+                  </span>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1894,7 +2184,7 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                     
                     {/* Content */}
                     <div className="p-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-2">
                         <span className="font-headline font-bold text-white uppercase tracking-tight text-lg">
                           {cat.name}
                         </span>
@@ -1904,6 +2194,25 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                           <div className="w-2 h-2 rounded-full bg-primary opacity-25"></div>
                         </div>
                       </div>
+                      {/* Card Size Badge */}
+                      {cat.cardSize && (
+                        <div className="mt-2">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
+                            cat.cardSize === 'large' ? 'bg-orange-500/20 text-orange-400' :
+                            cat.cardSize === 'full' ? 'bg-purple-500/20 text-purple-400' :
+                            cat.cardSize === 'small' ? 'bg-blue-500/20 text-blue-400' :
+                            'bg-green-500/20 text-green-400'
+                          }`}>
+                            <i className={`fa-solid ${
+                              cat.cardSize === 'large' ? 'fa-square-lg' :
+                              cat.cardSize === 'full' ? 'fa-rectangle-wide' :
+                              cat.cardSize === 'small' ? 'fa-square-sm' :
+                              'fa-square'
+                            }`}></i>
+                            {cat.cardSize}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1932,6 +2241,374 @@ _Mohon konfirmasi ketersediaan barang dan ongkos kirim. Terima kasih!_ 🙏`,
                   <span className="sm:hidden">Save</span>
                 </button>
               </div>
+            )}
+            </>
+            )}
+
+            {/* Layout Settings Sub-Tab Content */}
+            {activeArsenalSubTab === 'layout' && (
+            <>
+            {/* Info Banner */}
+            <div className="bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <i className="fa-solid fa-circle-info text-blue-500 text-2xl"></i>
+                </div>
+                <div>
+                  <h4 className="font-headline font-bold text-white uppercase mb-2">About Layout Settings</h4>
+                  <p className="text-sm text-gray-400 leading-relaxed">
+                    Atur tampilan The Arsenal di homepage. Anda bisa mengontrol jumlah kolom, tinggi, jarak, dan gaya layout tanpa mengubah logic backend.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Interactive Preview - Bento Layout */}
+            <div className="bg-surface-container-highest border border-outline-variant/30 rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-green-500 to-emerald-500 p-4">
+                <h4 className="text-lg font-headline font-bold uppercase text-white flex items-center gap-2">
+                  <i className="fa-solid fa-eye"></i>
+                  Live Preview - Bento Grid Layout
+                </h4>
+                <p className="text-xs text-white/80 mt-1">
+                  <i className="fa-solid fa-info-circle mr-1"></i>
+                  Layout mengikuti pattern: 1 card besar di kiri, 3 card di kanan (2 atas + 1 wide bawah)
+                </p>
+              </div>
+              
+              <div className="p-6">
+                {/* Preview Info */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-primary mb-1">
+                      {arsenalLayoutSettings.borderRadius === 'rounded-none' ? '0px' : 
+                       arsenalLayoutSettings.borderRadius === 'rounded-lg' ? '8px' :
+                       arsenalLayoutSettings.borderRadius === 'rounded-xl' ? '12px' :
+                       arsenalLayoutSettings.borderRadius === 'rounded-2xl' ? '16px' : '24px'}
+                    </div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wider">Radius</div>
+                  </div>
+                  <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-primary mb-1">{arsenalLayoutSettings.desktopGap}px</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wider">Gap</div>
+                  </div>
+                  <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-lg p-4 text-center">
+                    <div className="text-3xl font-bold text-primary mb-1">{arsenalLayoutSettings.overlayOpacity}%</div>
+                    <div className="text-xs text-gray-400 uppercase tracking-wider">Overlay</div>
+                  </div>
+                </div>
+
+                {/* Bento Grid Preview */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 auto-rows-[120px] md:auto-rows-[100px] select-none">
+                  {arsenalCategories.length > 0 ? arsenalCategories.slice(0, 4).map((cat: any, index: number) => {
+                    const getGridClasses = (index: number) => {
+                      if (index === 0) return 'md:row-span-2 md:col-span-2';
+                      if (index === 3) return 'md:col-span-2';
+                      return '';
+                    };
+
+                    return (
+                      <div
+                        key={index}
+                        className={`relative group bg-gradient-to-br from-primary/30 to-primary-container/30 border-2 border-primary/50 overflow-hidden ${getGridClasses(index)} ${
+                          arsenalLayoutSettings.borderRadius === 'rounded-none' ? '' :
+                          arsenalLayoutSettings.borderRadius === 'rounded-lg' ? 'rounded-lg' :
+                          arsenalLayoutSettings.borderRadius === 'rounded-xl' ? 'rounded-xl' :
+                          arsenalLayoutSettings.borderRadius === 'rounded-2xl' ? 'rounded-2xl' : 'rounded-3xl'
+                        }`}
+                      >
+                        {/* Category Name */}
+                        <div className="absolute inset-0 flex items-center justify-center p-3">
+                          <div className="text-center">
+                            <div className="text-xs md:text-sm font-headline font-bold text-white uppercase tracking-tight">
+                              {cat.name}
+                            </div>
+                            <div className="text-[8px] md:text-[10px] text-white/60 mt-1">Preview</div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }) : (
+                    <>
+                      {/* Dummy Preview - Bento Pattern */}
+                      <div className={`relative group bg-surface-container-low border border-outline-variant/30 md:row-span-2 md:col-span-2 ${
+                        arsenalLayoutSettings.borderRadius === 'rounded-none' ? '' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-lg' ? 'rounded-lg' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-xl' ? 'rounded-xl' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-2xl' ? 'rounded-2xl' : 'rounded-3xl'
+                      }`}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <i className="fa-solid fa-image text-3xl md:text-4xl text-white/20 mb-2"></i>
+                            <div className="text-xs text-gray-500 font-bold">HELMETS</div>
+                            <div className="text-[10px] text-gray-600">Category 1 (Large)</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`relative group bg-surface-container-low border border-outline-variant/30 ${
+                        arsenalLayoutSettings.borderRadius === 'rounded-none' ? '' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-lg' ? 'rounded-lg' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-xl' ? 'rounded-xl' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-2xl' ? 'rounded-2xl' : 'rounded-3xl'
+                      }`}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <i className="fa-solid fa-image text-2xl text-white/20 mb-2"></i>
+                            <div className="text-xs text-gray-500 font-bold">JACKETS</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`relative group bg-surface-container-low border border-outline-variant/30 ${
+                        arsenalLayoutSettings.borderRadius === 'rounded-none' ? '' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-lg' ? 'rounded-lg' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-xl' ? 'rounded-xl' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-2xl' ? 'rounded-2xl' : 'rounded-3xl'
+                      }`}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <i className="fa-solid fa-image text-2xl text-white/20 mb-2"></i>
+                            <div className="text-xs text-gray-500 font-bold">TOURING</div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`relative group bg-surface-container-low border border-outline-variant/30 md:col-span-2 ${
+                        arsenalLayoutSettings.borderRadius === 'rounded-none' ? '' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-lg' ? 'rounded-lg' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-xl' ? 'rounded-xl' :
+                        arsenalLayoutSettings.borderRadius === 'rounded-2xl' ? 'rounded-2xl' : 'rounded-3xl'
+                      }`}>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <i className="fa-solid fa-image text-2xl text-white/20 mb-2"></i>
+                            <div className="text-xs text-gray-500 font-bold">GLOVES & FOOTWEAR</div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Gap & Opacity Resize Area */}
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div
+                    className="relative bg-surface-container-low border-2 border-dashed border-primary/50 rounded-lg p-4 cursor-ew-resize hover:border-primary transition-colors"
+                    onMouseDown={(e) => handleResizeStart('width', e)}
+                    onTouchStart={(e) => handleResizeStart('width', e)}
+                  >
+                    <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                      <i className="fa-solid fa-arrows-left-right"></i>
+                      <span className="font-bold">Geser untuk ubah Gap</span>
+                      <span className="text-xs">({arsenalLayoutSettings.desktopGap}px)</span>
+                    </div>
+                  </div>
+                  <div
+                    className="relative bg-surface-container-low border-2 border-dashed border-primary/50 rounded-lg p-4 cursor-ns-resize hover:border-primary transition-colors"
+                    onMouseDown={(e) => handleResizeStart('height', e)}
+                    onTouchStart={(e) => handleResizeStart('height', e)}
+                  >
+                    <div className="flex items-center justify-center gap-2 text-sm text-primary">
+                      <i className="fa-solid fa-arrows-up-down"></i>
+                      <span className="font-bold">Geser untuk ubah Overlay</span>
+                      <span className="text-xs">({arsenalLayoutSettings.overlayOpacity}%)</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Instructions */}
+                <div className="mt-4 bg-blue-500/10 border border-blue-500/20 rounded p-3">
+                  <p className="text-xs text-gray-300 flex items-start gap-2">
+                    <i className="fa-solid fa-lightbulb text-blue-500 mt-0.5"></i>
+                    <span>
+                      <strong>Cara menggunakan:</strong><br/>
+                      • <strong>Layout Bento:</strong> Otomatis - card 1 besar di kiri, card 2-3 di kanan atas, card 4 wide di kanan bawah<br/>
+                      • <strong>Gap:</strong> Drag area kiri untuk mengubah jarak antar card<br/>
+                      • <strong>Overlay:</strong> Drag area kanan untuk mengubah kegelapan overlay<br/>
+                      • <strong>Border Radius:</strong> Pilih dari dropdown di bawah<br/>
+                      • Perubahan langsung terlihat di preview dan homepage
+                    </span>
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Style Settings */}
+            <div className="bg-surface-container-highest border border-outline-variant/30 rounded-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-primary to-primary-container p-4">
+                <h4 className="text-lg font-headline font-bold uppercase text-on-primary flex items-center gap-2">
+                  <i className="fa-solid fa-palette"></i>
+                  Style Settings
+                </h4>
+              </div>
+              <div className="p-6 space-y-6">
+                {/* Layout Style Selector */}
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-3">
+                    <i className="fa-solid fa-grid-2 mr-1"></i>
+                    Layout Style (Gaya Layout)
+                  </label>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    {[
+                      { value: 'classic', label: 'Classic', icon: 'fa-table-cells-large', desc: 'Screenshot style', featured: true },
+                      { value: 'bento', label: 'Bento', icon: 'fa-table-cells', desc: 'Asimetris, dinamis' },
+                      { value: 'grid', label: 'Grid', icon: 'fa-grid', desc: 'Rapi, responsif' },
+                      { value: 'masonry', label: 'Masonry', icon: 'fa-bricks', desc: 'Tinggi bervariasi' },
+                      { value: 'uniform', label: 'Uniform', icon: 'fa-squarespace', desc: 'Seragam, bersih' },
+                    ].map((style) => (
+                      <button
+                        key={style.value}
+                        type="button"
+                        onClick={() => setArsenalLayoutSettings({ ...arsenalLayoutSettings, layoutStyle: style.value })}
+                        className={`p-4 border-2 rounded-lg transition-all duration-200 relative ${
+                          arsenalLayoutSettings.layoutStyle === style.value
+                            ? 'border-primary bg-primary/10 text-primary'
+                            : 'border-outline-variant/30 bg-surface-container-low text-gray-400 hover:border-primary/50'
+                        }`}
+                      >
+                        {style.featured && (
+                          <div className="absolute -top-2 -right-2 bg-gradient-to-r from-orange-500 to-red-500 text-white text-[8px] font-bold px-2 py-0.5 rounded-full uppercase">
+                            NEW
+                          </div>
+                        )}
+                        <i className={`fa-solid ${style.icon} text-3xl mb-2`}></i>
+                        <div className="text-sm font-bold uppercase">{style.label}</div>
+                        <div className="text-[10px] opacity-60 mt-1">{style.desc}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Auto Arrange Toggle */}
+                <div className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                        <i className="fa-solid fa-wand-magic-sparkles text-primary text-xl"></i>
+                      </div>
+                      <div>
+                        <div className="font-bold text-white uppercase text-sm">Auto Arrange</div>
+                        <div className="text-xs text-gray-400">Otomatis atur ukuran card berdasarkan posisi</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setArsenalLayoutSettings({ ...arsenalLayoutSettings, autoArrange: !arsenalLayoutSettings.autoArrange })}
+                      className={`relative w-14 h-7 rounded-full transition-all duration-300 ${
+                        arsenalLayoutSettings.autoArrange
+                          ? 'bg-primary'
+                          : 'bg-surface-container-highest border border-outline-variant/30'
+                      }`}
+                    >
+                      <div className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full transition-transform duration-300 ${
+                        arsenalLayoutSettings.autoArrange ? 'translate-x-7' : 'translate-x-0'
+                      }`}></div>
+                    </button>
+                  </div>
+                  {arsenalLayoutSettings.autoArrange && (
+                    <div className="mt-3 bg-primary/5 border border-primary/20 rounded p-3">
+                      <p className="text-xs text-gray-300 flex items-start gap-2">
+                        <i className="fa-solid fa-circle-check text-primary mt-0.5"></i>
+                        <span>Auto Arrange aktif. Ukuran card akan otomatis disesuaikan berdasarkan layout yang dipilih.</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                    Overlay Opacity (%)
+                  </label>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    step="10"
+                    value={arsenalLayoutSettings.overlayOpacity}
+                    onChange={(e) => setArsenalLayoutSettings({...arsenalLayoutSettings, overlayOpacity: parseInt(e.target.value)})}
+                    className="w-full accent-primary"
+                  />
+                  <div className="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>0% (Terang)</span>
+                    <span className="text-primary font-bold">{arsenalLayoutSettings.overlayOpacity}%</span>
+                    <span>100% (Gelap)</span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                      Border Radius
+                    </label>
+                    <select
+                      value={arsenalLayoutSettings.borderRadius}
+                      onChange={(e) => setArsenalLayoutSettings({...arsenalLayoutSettings, borderRadius: e.target.value})}
+                      className="w-full bg-surface-container-lowest border border-outline-variant/30 rounded px-4 py-3 text-white focus:border-primary input-brutal appearance-none cursor-pointer"
+                    >
+                      <option value="rounded-none">Tidak Ada (Kotak - Seperti Referensi)</option>
+                      <option value="rounded-lg">Sedikit (8px)</option>
+                      <option value="rounded-xl">Medium (12px)</option>
+                      <option value="rounded-2xl">Besar (16px)</option>
+                      <option value="rounded-3xl">Sangat Besar (24px)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-headline uppercase tracking-widest text-gray-500 mb-2">
+                      Ukuran Teks Judul
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      <button
+                        onClick={() => setArsenalLayoutSettings({...arsenalLayoutSettings, textSize: 'small'})}
+                        className={`p-4 border-2 rounded-lg font-headline font-bold uppercase transition-all ${
+                          arsenalLayoutSettings.textSize === 'small'
+                            ? 'border-primary bg-primary/20 text-primary'
+                            : 'border-outline-variant/30 bg-surface-container-lowest text-gray-400 hover:border-white/50'
+                        }`}
+                      >
+                        <div className="text-xs">Kecil</div>
+                      </button>
+                      <button
+                        onClick={() => setArsenalLayoutSettings({...arsenalLayoutSettings, textSize: 'normal'})}
+                        className={`p-4 border-2 rounded-lg font-headline font-bold uppercase transition-all ${
+                          arsenalLayoutSettings.textSize === 'normal'
+                            ? 'border-primary bg-primary/20 text-primary'
+                            : 'border-outline-variant/30 bg-surface-container-lowest text-gray-400 hover:border-white/50'
+                        }`}
+                      >
+                        <div className="text-sm">Normal</div>
+                      </button>
+                      <button
+                        onClick={() => setArsenalLayoutSettings({...arsenalLayoutSettings, textSize: 'large'})}
+                        className={`p-4 border-2 rounded-lg font-headline font-bold uppercase transition-all ${
+                          arsenalLayoutSettings.textSize === 'large'
+                            ? 'border-primary bg-primary/20 text-primary'
+                            : 'border-outline-variant/30 bg-surface-container-lowest text-gray-400 hover:border-white/50'
+                        }`}
+                      >
+                        <div className="text-base">Besar</div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-end pt-6 border-t border-outline-variant/30">
+              <button
+                onClick={handleResetArsenalLayout}
+                className="sm:w-auto px-6 py-4 font-headline font-bold uppercase tracking-widest text-white rounded-md btn-brutal flex items-center justify-center gap-2 bg-surface-container-highest border border-outline-variant/20 hover:bg-surface-bright transition-all"
+              >
+                <i className="fa-solid fa-rotate-left"></i>
+                Reset Default
+              </button>
+              <button
+                onClick={handleSaveArsenalLayout}
+                className="sm:w-auto bg-gradient-to-br from-primary to-primary-container px-6 sm:px-10 py-3 sm:py-4 font-headline font-bold uppercase tracking-widest text-on-primary rounded-md btn-brutal flex items-center gap-2 sm:gap-3 hover:from-primary-container hover:to-primary transition-all shadow-lg shadow-primary/20"
+              >
+                <i className="fa-solid fa-floppy-disk"></i>
+                Save Layout Settings
+              </button>
+            </div>
+            </>
             )}
           </div>
         </div>
